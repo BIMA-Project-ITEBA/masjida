@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_sermon_root"
+        name="Sermon Management"
+        sequence="10"/>
+
+    <menuitem id="menu_sermon_master_data"
+        name="Master Data"
+        parent="menu_sermon_root"
+        sequence="10"/>
+
+    <menuitem id="menu_sermon_schedules_main"
+        name="Schedules"
+        parent="menu_sermon_root"
+        sequence="20"/>
+
+    <menuitem id="menu_sermon_content_main"
+        name="Content"
+        parent="menu_sermon_root"
+        sequence="30"/>
+</odoo>

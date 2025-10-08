@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sermon_schedule_list" model="ir.ui.view">
+        <field name="name">sermon.schedule.list</field>
+        <field name="model">sermon.schedule</field>
+        <field name="arch" type="xml">
+            <list string="Sermon Schedules" decoration-info="state=='draft' or state=='sent'" decoration-success="state=='confirmed'" decoration-muted="state=='done' or state=='cancelled'" decoration-danger="state=='rejected'">
+                <field name="topic"/>
+                <field name="mosque_id"/>
+                <field name="preacher_id"/>
+                <field name="start_time"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sermon_schedule_form" model="ir.ui.view">
+        <field name="name">sermon.schedule.form</field>
+        <field name="model">sermon.schedule</field>
+        <field name="arch" type="xml">
+            <form string="Sermon Schedule">
+                <header>
+                    <button name="action_send_invitation" string="Send Invitation" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_cancel" string="Cancel" type="object" invisible="state not in 'confirmed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent,confirmed,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="topic" placeholder="Sermon Topic..."/></h1>
+                    </div>
+                    <group>
+                        <field name="mosque_id"/>
+                        <field name="preacher_id"/>
+                        <field name="start_time"/>
+                        <field name="end_time"/>
+                    </group>
+                    <field name="description" placeholder="Brief description of the sermon..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sermon_schedule" model="ir.actions.act_window">
+        <field name="name">Sermon Schedules</field>
+        <field name="res_model">sermon.schedule</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_action_sermon_schedule"
+        action="action_sermon_schedule"
+        parent="menu_sermon_schedules_main"
+        sequence="10"/>
+
+    <record id="view_sermon_proposal_list" model="ir.ui.view">
+        <field name="name">sermon.proposal.list</field>
+        <field name="model">sermon.proposal</field>
+        <field name="arch" type="xml">
+            <list string="Sermon Proposals" decoration-info="state=='submitted'" decoration-success="state=='approved'" decoration-danger="state=='rejected'">
+                <field name="proposed_topic"/>
+                <field name="preacher_id"/>
+                <field name="mosque_id"/>
+                <field name="proposed_start_time"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sermon_proposal_form" model="ir.ui.view">
+        <field name="name">sermon.proposal.form</field>
+        <field name="model">sermon.proposal</field>
+        <field name="arch" type="xml">
+            <form string="Sermon Proposal">
+                <header>
+                    <button name="action_approve" string="Approve" type="object" class="btn-primary" invisible="state != 'submitted'"/>
+                    <button name="action_reject" string="Reject" type="object" invisible ="state !='submitted'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,submitted,approved"/>
+                </header>
+                <sheet>
+                    <h2><field name="proposed_topic" placeholder="Proposed Topic..."/></h2>
+                    <group>
+                        <field name="preacher_id"/>
+                        <field name="mosque_id"/>
+                        <field name="proposed_start_time"/>
+                    </group>
+                    <field name="notes" placeholder="Notes for the mosque admin..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sermon_proposal" model="ir.actions.act_window">
+        <field name="name">Sermon Proposals</field>
+        <field name="res_model">sermon.proposal</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_action_sermon_proposal"
+        action="action_sermon_proposal"
+        parent="menu_sermon_schedules_main"
+        sequence="20"/>
+</odoo>

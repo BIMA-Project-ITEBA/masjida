@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="rule_mosque_admin_can_manage_own_mosques" model="ir.rule">
+            <field name="name">Mosque Admin: Manage Own Mosques</field>
+            <field name="model_id" ref="model_mosque_mosque"/>
+            <field name="groups" eval="[(4, ref('masjida.group_mosque_admin'))]"/>
+            <field name="perm_read" eval="0"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+            <field name="domain_force">[('admin_ids', 'in', user.id)]</field>
+        </record>
+
+        <record id="rule_mosque_admin_can_manage_own_mosques" model="ir.rule">
+            <field name="name">Mosque Admin: Manage Own Mosques</field>
+            <field name="model_id" ref="model_mosque_mosque"/>
+            <field name="groups" eval="[(4, ref('masjida.group_mosque_admin'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+            <field name="domain_force">[('board_member_ids.user_id', '=', user.id)]</field>
+        
+        </record>
+
+        <record id="rule_mosque_admin_can_manage_own_schedules" model="ir.rule">
+            <field name="name">Mosque Admin: Manage Own Schedules</field>
+            <field name="model_id" ref="model_sermon_schedule"/>
+            <field name="groups" eval="[(4, ref('group_mosque_admin'))]"/>
+            <field name="domain_force">[('mosque_id.admin_ids', 'in', user.id)]</field>
+        </record>
+        
+        <record id="rule_preacher_can_edit_own_profile" model="ir.rule">
+            <field name="name">Preacher: Manage Own Profile</field>
+            <field name="model_id" ref="model_preacher_preacher"/>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="perm_read" eval="0"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="0"/>
+            <field name="perm_unlink" eval="0"/>
+            <field name="domain_force">[('user_id', '=', user.id)]</field>
+        </record>
+        
+        <record id="rule_preacher_can_see_own_schedules_proposals" model="ir.rule">
+            <field name="name">Preacher: See Own Schedules and Proposals</field>
+            <field name="model_id" ref="model_sermon_schedule"/>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="domain_force">[('preacher_id.user_id', '=', user.id)]</field>
+        </record>
+        
+        <record id="rule_preacher_can_manage_own_proposals" model="ir.rule">
+            <field name="name">Preacher: Manage Own Proposals</field>
+            <field name="model_id" ref="model_sermon_proposal"/>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="domain_force">[('preacher_id.user_id', '=', user.id)]</field>
+        </record>
+        
+        <record id="rule_preacher_can_manage_own_content" model="ir.rule">
+            <field name="name">Preacher: Manage Own Content</field>
+            <field name="model_id" ref="model_sermon_content"/>
+            <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+            <field name="domain_force">[('preacher_id.user_id', '=', user.id)]</field>
+        </record>
+        
+        <record id="rule_public_can_see_confirmed_schedules" model="ir.rule">
+            <field name="name">Public: See Confirmed Schedules</field>
+            <field name="model_id" ref="model_sermon_schedule"/>
+            <field name="groups" eval="[(4, ref('base.group_public'))]"/>
+            <field name="domain_force">[('state', '=', 'confirmed')]</field>
+        </record>
+
+        <record id="rule_public_can_see_published_content" model="ir.rule">
+            <field name="name">Public: See Published Content</field>
+            <field name="model_id" ref="model_sermon_content"/>
+            <field name="groups" eval="[(4, ref('base.group_public'))]"/>
+            <field name="domain_force">[('state', '=', 'published')]</field>
+        </record>
+
+    </data>
+</odoo>
