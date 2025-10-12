@@ -30,13 +30,16 @@ class SermonAPIController(http.Controller):
         try:
             mosques_raw = request.env['mosque.mosque'].search_read(
                 [],
-                ['id', 'name', 'city', 'area_id', 'image']
+                ['id', 'name','city', 'code', 'area_id', 'image']
             )
             # Mengonversi gambar base64 ke URL agar lebih efisien
+             # Memformat data agar lebih ramah untuk frontend
             mosques_data = [{
                 'id': m['id'],
                 'name': m['name'],
-                'area': m['area_id'][1] if m.get('area_id') else 'N/A', # Ambil nama area
+                'city':m['city'],
+                'code': m['code'], # Menambahkan kode ke JSON
+                'area': m['area_id'][1] if m.get('area_id') else 'N/A',
                 'image_url': f'/web/image/mosque.mosque/{m["id"]}/image' if m.get('image') else None
             } for m in mosques_raw]
 
@@ -58,23 +61,24 @@ class SermonAPIController(http.Controller):
         Contoh Panggilan: GET http://<odoo_url>/api/v1/preachers
         """
         try:
+            # Menambahkan 'code' ke daftar field yang diambil
             preachers_raw = request.env['preacher.preacher'].search_read(
                 [],
-                ['id', 'name', 'specialization','area_id', 'image']
+                ['id', 'name', 'code', 'specialization_id', 'area_id', 'image']
             )
             preachers_data = [{
                 'id': p['id'],
                 'name': p['name'],
+                'code': p['code'], # Menambahkan kode ke JSON
                 'specialization': p['specialization_id'][1] if p.get('specialization_id') else 'N/A',
-                # Menambahkan nama area ke respons JSON
                 'area': p['area_id'][1] if p.get('area_id') else 'N/A',
                 'image_url': f'/web/image/preacher.preacher/{p["id"]}/image' if p.get('image') else None
             } for p in preachers_raw]
 
             return {
                 'status': 'success',
-                'count': len(preachers_raw),
-                'data': preachers_raw
+                'count': len(preachers_data),
+                'data': preachers_data
             }
         except Exception as e:
             return {'status': 'error', 'message': str(e)}
@@ -82,28 +86,20 @@ class SermonAPIController(http.Controller):
 
     @http.route('/api/v1/mosques/<int:mosque_id>', auth='public', methods=['GET'], type='json', cors='*')
     def get_mosque_detail(self, mosque_id, **kwargs):
-        """
-        Endpoint untuk mendapatkan detail satu masjid beserta jadwalnya.
-        Digunakan di halaman Detail Masjid.
-        ---
-        Contoh Panggilan: GET http://<odoo_url>/api/v1/mosques/1
-        """
         mosque = request.env['mosque.mosque'].browse(mosque_id)
         if not mosque.exists():
             return {'status': 'error', 'message': 'Mosque not found'}
         
-        # Ambil data jadwal yang sudah dikonfirmasi
         schedules = request.env['sermon.schedule'].search_read(
             [('mosque_id', '=', mosque_id), ('state', '=', 'confirmed')],
             ['id', 'topic', 'start_time', 'preacher_id']
         )
         
-        # Siapkan data untuk respons
         mosque_data = {
             'id': mosque.id,
             'name': mosque.name,
-            'city': mosque.city,
-            'province': mosque.province,
+            'code': mosque.code, # Menambahkan kode ke JSON
+            'area': mosque.area_id.name if mosque.area_id else None,
             'full_address': mosque.full_address,
             'description': mosque.description,
             'image_url': _get_image_url(mosque, 'image'),
@@ -117,18 +113,11 @@ class SermonAPIController(http.Controller):
                 } for s in schedules
             ]
         }
-        
         return {'status': 'success', 'data': mosque_data}
 
 
     @http.route('/api/v1/preachers/<int:preacher_id>', auth='public', methods=['GET'], type='json', cors='*')
     def get_preacher_detail(self, preacher_id, **kwargs):
-        """
-        Endpoint untuk mendapatkan detail satu pendakwah beserta jadwalnya.
-        Digunakan di halaman Detail Pendakwah.
-        ---
-        Contoh Panggilan: GET http://<odoo_url>/api/v1/preachers/101
-        """
         preacher = request.env['preacher.preacher'].browse(preacher_id)
         if not preacher.exists():
             return {'status': 'error', 'message': 'Preacher not found'}
@@ -141,7 +130,9 @@ class SermonAPIController(http.Controller):
         preacher_data = {
             'id': preacher.id,
             'name': preacher.name,
-            'specialization': preacher.specialization,
+            'code': preacher.code, # Menambahkan kode ke JSON
+            'specialization': preacher.specialization_id.name if preacher.specialization_id else None,
+            'area': preacher.area_id.name if preacher.area_id else None,
             'bio': preacher.bio,
             'image_url': _get_image_url(preacher, 'image'),
             'schedules': [
@@ -154,5 +145,23 @@ class SermonAPIController(http.Controller):
                 } for s in schedules
             ]
         }
-        
         return {'status': 'success', 'data': preacher_data}
+
+    @http.route('/api/v1/areas', auth='public', methods=['GET'], type='json', cors='*')
+    def get_areas(self, **kwargs):
+        """Endpoint untuk mendapatkan daftar semua area."""
+        try:
+            areas = request.env['area.area'].search_read([], ['id', 'name'])
+            return {'status': 'success', 'data': areas}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    @http.route('/api/v1/specializations', auth='public', methods=['GET'], type='json', cors='*')
+    def get_specializations(self, **kwargs):
+        """Endpoint untuk mendapatkan daftar semua spesialisasi."""
+        try:
+            specializations = request.env['preacher.specialization'].search_read([], ['id', 'name'])
+            return {'status': 'success', 'data': specializations}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
