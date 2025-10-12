@@ -22,3 +22,14 @@ access_sermon_proposal_portal,access.sermon.proposal.portal,model_sermon_proposa
 access_sermon_content_system,access.sermon.content.system,model_sermon_content,base.group_system,1,1,1,1
 access_sermon_content_portal,access.sermon.content.portal,model_sermon_content,base.group_portal,1,1,1,1
 access_sermon_content_public,access.sermon.content.public,model_sermon_content,base.group_public,1,0,0,0
+
+
+access_mosque_board_system,access.mosque.board.system,model_mosque_board,base.group_system,1,1,1,1
+access_mosque_board_admin,access.mosque.board.admin,model_mosque_board,masjida.group_mosque_admin,1,1,1,1
+access_mosque_board_portal,access.mosque.board.portal,model_mosque_board,base.group_portal,1,0,0,0
+access_mosque_board_public,access.mosque.board.public,model_mosque_board,base.group_public,1,0,0,0
+
+access_area_area_public,access.area.area.public,model_area_area,base.group_public,1,0,0,0
+access_area_area_system,access.area.area.system,model_area_area,base.group_system,1,1,1,1
+access_preacher_specialization_public,access.preacher.specialization.public,model_preacher_specialization,base.group_public,1,0,0,0
+access_preacher_specialization_system,access.preacher.specialization.system,model_preacher_specialization,base.group_system,1,1,1,1

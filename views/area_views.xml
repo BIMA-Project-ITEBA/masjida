@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_area_area_list" model="ir.ui.view">
+        <field name="name">area.area.list</field>
+        <field name="model">area.area</field>
+        <field name="arch" type="xml">
+            <list string="Areas">
+                <field name="name"/>
+                <field name="parent_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_area_area_form" model="ir.ui.view">
+        <field name="name">area.area.form</field>
+        <field name="model">area.area</field>
+        <field name="arch" type="xml">
+            <form string="Area">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="parent_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_area_area" model="ir.actions.act_window">
+        <field name="name">Areas</field>
+        <field name="res_model">area.area</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_action_area"
+        action="action_area_area"
+        parent="menu_sermon_master_data"
+        sequence="30"/>
+</odoo>

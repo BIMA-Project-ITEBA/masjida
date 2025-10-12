@@ -6,6 +6,7 @@
         <field name="arch" type="xml">
             <list string="Mosques">
                 <field name="name"/>
+                <field name="area_id"/>
                 <field name="city"/>
                 <field name="province"/>
                 <field name="phone"/>
@@ -27,11 +28,14 @@
                     </div>
                     <group>
                         <group>
+                            <field name="code"/>
+
                             <field name="phone"/>
                             <field name="email"/>
                             <field name="website" widget="url"/>
                         </group>
                         <group>
+                            <field name="area_id"/>
                             <label for="street" string="Address"/>
                             <div class="o_address_format">
                                 <field name="street" placeholder="Street..." class="o_address_street"/>
@@ -59,6 +63,16 @@
                          <!-- <page string="Admins">
                             <field name="admin_ids" widget="many2many_tags"/>
                         </page> -->
+                        <page string="Board Members">
+                        <field name="board_member_ids">
+                            <list editable="bottom">
+                                <field name="name"/>
+                                <field name="position"/>
+                                <field name="user_id"/>
+                                <field name="phone"/>
+                            </list>
+                        </field>
+                    </page>
                     </notebook>
                 </sheet>
             </form>

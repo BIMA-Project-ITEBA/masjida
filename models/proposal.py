@@ -8,7 +8,7 @@ class SermonProposal(models.Model):
 
     preacher_id = fields.Many2one('preacher.preacher', string='Preacher', required=True,
                                  default=lambda self: self.env['preacher.preacher'].search([('user_id', '=', self.env.uid)], limit=1))
-    mosque_id = fields.Many2one('mosque.mosque', string='Target Mosque', required=True, domain="[('admin_ids', '!=', False)]")
+    mosque_id = fields.Many2one('mosque.mosque', string='Target Mosque', required=True, domain="[('board_member_ids', '!=', False)]")
     
     proposed_topic = fields.Char(string='Proposed Topic', required=True)
     proposed_start_time = fields.Datetime(string='Proposed Time', required=True)
@@ -54,6 +54,6 @@ class SermonProposal(models.Model):
     def action_reject(self):
         """Function for the mosque admin to reject the proposal."""
         self.ensure_one()
-        if self.env.user not in self.mosque_id.admin_ids:
+        if self.env.user not in self.mosque_id.board_member_ids:
             raise models.UserError('Only this mosque\'s admin can reject the proposal.')
         self.state = 'rejected'

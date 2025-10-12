@@ -6,7 +6,7 @@
         <field name="arch" type="xml">
             <list string="Preachers">
                 <field name="name"/>
-                <field name="specialization"/>
+                <field name="specialization_id"/>
                 <field name="phone"/>
                 <field name="email"/>
             </list>
@@ -22,10 +22,11 @@
                     <field name="image" widget="image" class="oe_avatar"/>
                     <div class="oe_title">
                         <h1><field name="name" placeholder="Preacher Name..."/></h1>
-                        <h3><field name="specialization" placeholder="Specialization..."/></h3>
+                        <h3><field name="specialization_id" placeholder="Specialization..."/></h3>
                     </div>
                     <group>
                         <group>
+                            <field name="code"/>
                             <field name="phone"/>
                             <field name="email"/>
                             <field name="user_id"/>

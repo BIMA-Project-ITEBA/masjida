@@ -6,6 +6,7 @@ class Mosque(models.Model):
     _name = 'mosque.mosque'
     _description = 'Mosque Master Data Model'
 
+    code = fields.Char(string='code', required=True)
     name = fields.Char(string='Mosque Name', required=True)
     image = fields.Image(string='Mosque Photo', max_width=1024, max_height=1024)
     street = fields.Char(string='Street')
@@ -14,7 +15,10 @@ class Mosque(models.Model):
     zip_code = fields.Char(string='Zip Code')
     country_id = fields.Many2one('res.country', string='Country', default=lambda self: self.env.ref('base.id'))
     
-    # Combined address for display purposes
+    # FIELD BARU: Relasi ke Area
+    area_id = fields.Many2one('area.area', string='Area', required=True)
+    
+    # Computed field yang diperbarui
     full_address = fields.Text(string='Full Address', compute='_compute_full_address', store=True)
     
     phone = fields.Char(string='Phone')
@@ -34,9 +38,9 @@ class Mosque(models.Model):
     # # Relation to view incoming proposals for this mosque
     proposal_ids = fields.One2many('sermon.proposal', 'mosque_id', string='Incoming Sermon Proposals')
     
-    @api.depends('street', 'city', 'province', 'zip_code', 'country_id')
+    @api.depends('street', 'area_id', 'zip_code', 'country_id')
     def _compute_full_address(self):
-        """Combines address fields into a single string for display purposes."""
+        """Menggabungkan field alamat dengan menggunakan data dari area."""
         for record in self:
-            parts = [record.street, record.city, record.province, record.zip_code, record.country_id.name]
+            parts = [record.street, record.area_id.name, record.zip_code, record.country_id.name]
             record.full_address = ', '.join(part for part in parts if part)

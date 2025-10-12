@@ -16,6 +16,8 @@
         'views/mosque_views.xml',
         'views/preacher_views.xml',
         'views/board_views.xml',
+        'views/area_views.xml', # Tambahkan ini
+         'views/specialization_views.xml',   
         'views/schedule_views.xml',
         'views/content_views.xml',
         

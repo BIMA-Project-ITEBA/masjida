@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="view_mosque_board_tree" model="ir.ui.view">
-        <field name="name">mosque.board.tree</field>
+    <record id="view_mosque_board_list" model="ir.ui.view">
+        <field name="name">mosque.board.list</field>
         <field name="model">mosque.board</field>
         <field name="arch" type="xml">
-            <tree string="Board Members">
+            <list string="Board Members">
                 <field name="name"/>
                 <field name="position"/>
                 <field name="mosque_id"/>
                 <field name="user_id"/>
                 <field name="phone"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -36,7 +36,7 @@
     <record id="action_mosque_board" model="ir.actions.act_window">
         <field name="name">Board Members</field>
         <field name="res_model">mosque.board</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <menuitem id="menu_action_mosque_board"
@@ -44,7 +44,7 @@
         parent="menu_sermon_master_data"
         sequence="15"/>
 
-    <record id="view_mosque_mosque_form_inherit_board" model="ir.ui.view">
+    <!-- <record id="view_mosque_mosque_form_inherit_board" model="ir.ui.view">
         <field name="name">mosque.mosque.form.inherit.board</field>
         <field name="model">mosque.mosque</field>
         <field name="inherit_id" ref="masjida.view_mosque_mosque_form"/>
@@ -52,15 +52,15 @@
             <xpath expr="//notebook/page[@string='Admins']" position="replace">
                 <page string="Board Members">
                     <field name="board_member_ids">
-                        <tree editable="bottom">
+                        <list editable="bottom">
                             <field name="name"/>
                             <field name="position"/>
                             <field name="user_id"/>
                             <field name="phone"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>
         </field>
-    </record>
+    </record> -->
 </odoo>

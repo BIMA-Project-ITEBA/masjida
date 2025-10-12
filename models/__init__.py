@@ -7,3 +7,5 @@ from . import proposal
 from . import content
 from . import user
 from . import mosque_board
+from . import area
+from . import specialization
