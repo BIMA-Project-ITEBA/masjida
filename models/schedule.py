@@ -33,9 +33,6 @@ class SermonSchedule(models.Model):
     def action_confirm(self):
         """Function called by the preacher to accept the invitation."""
         self.ensure_one()
-        # Validation: Ensure the user clicking is the correct preacher
-        if self.env.user != self.preacher_id.user_id:
-            raise models.UserError('You are not authorized to accept this invitation.')
         self.state = 'confirmed'
         
     def action_reject(self):
