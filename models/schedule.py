@@ -41,8 +41,6 @@ class SermonSchedule(models.Model):
     def action_reject(self):
         """Function called by the preacher to reject the invitation."""
         self.ensure_one()
-        if self.env.user != self.preacher_id.user_id:
-            raise models.UserError('You are not authorized to reject this invitation.')
         self.state = 'rejected'
 
     def action_cancel(self):
