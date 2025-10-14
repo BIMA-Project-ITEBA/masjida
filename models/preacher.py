@@ -32,7 +32,7 @@ class Preacher(models.Model):
     # Relation to view all proposals sent by this preacher
     proposal_ids = fields.One2many('sermon.proposal', 'preacher_id', string='Sent Sermon Proposals')
     gender = fields.Selection([
-        ('male', 'Laki-Laki'),                 # Created by mosque admin
+        ('male', 'Laki-laki'),                 # Created by mosque admin
         ('female', 'Perempuan'),   # Invitation sent to preacher
     ], string='Gender', default='male', readonly=True, copy=False)
     period = fields.Float(string="period of preaching(year)")
