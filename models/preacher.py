@@ -12,6 +12,7 @@ class Preacher(models.Model):
     phone = fields.Char(string='Phone Number')
     email = fields.Char(string='Email')
     bio = fields.Html(string='Biography')
+    education = fields.Char(string='Education')
     # FIELD DIPERBARUI: Dari Char menjadi Many2one
     specialization_id = fields.Many2one('preacher.specialization', string='Specialization')
     
@@ -30,6 +31,11 @@ class Preacher(models.Model):
     
     # Relation to view all proposals sent by this preacher
     proposal_ids = fields.One2many('sermon.proposal', 'preacher_id', string='Sent Sermon Proposals')
+    gender = fields.Selection([
+        ('male', 'Laki-Laki'),                 # Created by mosque admin
+        ('female', 'Perempuan'),   # Invitation sent to preacher
+    ], string='Gender', default='male', readonly=True, copy=False)
+    period = fields.Float(string="period of preaching(year)")
 
     @api.model
     def create(self, vals):
