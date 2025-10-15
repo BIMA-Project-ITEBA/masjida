@@ -35,6 +35,7 @@
                          <field name="education"/>
                             <field name="period"/>
                             <field name="gender"/>
+                        <field name="date_of_birth"/>
                         </group>
                     </group>
                     <notebook>

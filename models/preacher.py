@@ -13,6 +13,7 @@ class Preacher(models.Model):
     email = fields.Char(string='Email')
     bio = fields.Html(string='Biography')
     education = fields.Char(string='Education')
+    date_of_birth = fields.Date(string='Date of birth')
     # FIELD DIPERBARUI: Dari Char menjadi Many2one
     specialization_id = fields.Many2one('preacher.specialization', string='Specialization')
     
@@ -36,6 +37,14 @@ class Preacher(models.Model):
         ('female', 'Perempuan'),   # Invitation sent to preacher
     ], string='Gender', default='male', readonly=True, copy=False)
     period = fields.Float(string="period of preaching(year)")
+
+    state = fields.Selection([
+        ('draft', 'Draft'),                 # Created by mosque admin
+        ('proses', 'Proses'),   # Invitation sent to preacher
+        ('confirmed', 'Confirmed'),         # Accepted by preacher
+        ('rejected', 'Rejected'),           # Rejected by preacher              # The event has passed
+        ('cancelled', 'Cancelled')          # Cancelled by either party
+    ], string='Status', default='draft', readonly=True, copy=False)
 
     @api.model
     def create(self, vals):
