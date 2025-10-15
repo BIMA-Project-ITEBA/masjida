@@ -204,3 +204,76 @@ class SermonAPIController(http.Controller):
             _logger.error(f"Error during user registration: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
 
+     # --- FUNGSI BARU UNTUK MENGAMBIL PROFIL LENGKAP GYMNEST USER ---
+    @http.route('/api/profile', type='http', auth='user', methods=['GET'], csrf=False)
+    def get__user_profile(self, **kw):
+        try:
+            # Cari gymnest.user yang terhubung dengan res.users yang sedang login
+            user = request.env['preacher.preacher'].search([('user_id', '=', request.uid)], limit=1)
+            if not user.exists():
+                return request.make_response('user profile not found.', status=404)
+            schedules = request.env['sermon.schedule'].search_read(
+            [('preacher_id', '=', user.id), ('state', '=', 'confirmed')],
+            ['id', 'topic', 'start_time', 'mosque_id']
+        )
+            
+            # Ambil semua data yang dibutuhkan
+            profile_data = {
+                'id': user.id,
+                'name': user.name,
+                'specialization': user.specialization_id.name if user.specialization_id else None,
+                'email': user.email,
+                'image_url': _get_image_url(user, 'image'),
+                'user_type': 'preacher',
+                'gender': user.gender,
+                'date_of_birth': user.date_of_birth.isoformat() if user.date_of_birth else None,
+                'phone': user.phone,
+                'education': user.education,
+                 'area': user.area_id.name if user.area_id else None,
+                'bio': user.bio,
+                'code': user.code,
+                'gender':user.gender,
+                'period':user.period,
+                'schedules': [
+                 {
+                    'id': s['id'],
+                    'topic': s['topic'],
+                    'start_time': s['start_time'].isoformat() if s.get('start_time') else None,
+                    'mosque_id': s['mosque_id'][0],
+                    'mosque_name': s['mosque_id'][1],
+                } for s in schedules
+            ],
+                'state': user.state,
+            }
+            return request.make_json_response({'status': 'success', 'data': profile_data})
+        except Exception as e:
+            _logger.error(f"Error fetching gymnest user profile: {e}", exc_info=True)
+            return request.make_response('Internal Server Error', status=500)
+
+    # --- FUNGSI BARU UNTUK UPDATE PROFIL ---
+    @http.route('/api/update_profile', type='json', auth='user', methods=['POST'], csrf=False)
+    def update_gymnest_user_profile(self, **kw):
+        """
+        Hanya akan mengupdate field yang diizinkan
+        """
+        try:
+            user = request.env['gymnest.user'].search([('user_id', '=', request.uid)], limit=1)
+            if not user.exists():
+                return {'status': 'error', 'message': 'Gymnest user not found.'}
+
+            # Siapkan dictionary berisi field yang boleh diupdate
+            allowed_fields = ['mobile_number', 'address', 'weight', 'height', 'geolocation']
+            vals_to_update = {}
+            for field in allowed_fields:
+                if field in kw:
+                    vals_to_update[field] = kw.get(field)
+            
+            if vals_to_update:
+                user.write(vals_to_update)
+            
+            return {'status': 'success', 'message': 'Profile updated successfully.'}
+        except Exception as e:
+            _logger.error(f"Error updating gymnest user profile: {e}", exc_info=True)
+            return {'status': 'error', 'message': str(e)}
+
+
