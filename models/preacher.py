@@ -35,7 +35,7 @@ class Preacher(models.Model):
     gender = fields.Selection([
         ('male', 'Laki-laki'),                 # Created by mosque admin
         ('female', 'Perempuan'),   # Invitation sent to preacher
-    ], string='Gender', default='male', readonly=True, copy=False)
+    ], string='Gender', default='male')
     period = fields.Float(string="period of preaching(year)")
 
     state = fields.Selection([
