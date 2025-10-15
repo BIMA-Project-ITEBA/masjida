@@ -6,7 +6,7 @@ class Preacher(models.Model):
     _name = 'preacher.preacher'
     _description = 'Preacher Master Data Model'
     
-    code = fields.Char(string='code', required=True)
+    code = fields.Char(string='code')
     name = fields.Char(string='Preacher Name', required=True)
     image = fields.Image(string='Profile Photo', max_width=1024, max_height=1024)
     phone = fields.Char(string='Phone Number')
