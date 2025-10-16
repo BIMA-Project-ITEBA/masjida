@@ -276,4 +276,69 @@ class SermonAPIController(http.Controller):
             _logger.error(f"Error updating gymnest user profile: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
 
+# --- ENDPOINT BARU UNTUK NOTIFIKASI UNDANGAN ---
+
+    @http.route('/api/v1/schedules/pending', auth='user', methods=['GET'], type='http', cors='*')
+    def get_pending_schedules(self, **kwargs):
+        """
+        Mengambil daftar jadwal yang dikirim (sent) ke pendakwah yang sedang login.
+        Membutuhkan user untuk login (auth='user').
+        """
+        try:
+            # Cari profil pendakwah yang terhubung dengan user yang sedang login
+            preacher = request.env['preacher.preacher'].search([('user_id', '=', request.uid)], limit=1)
+            if not preacher:
+                return Response(json.dumps({'status': 'error', 'message': 'Profil pendakwah tidak ditemukan.'}), content_type='application/json', status=404)
+
+            # Cari jadwal dengan status 'sent' untuk pendakwah tersebut
+            schedules_raw = request.env['sermon.schedule'].search_read(
+                [('preacher_id', '=', preacher.id), ('state', '=', 'sent')],
+                ['id', 'topic', 'start_time', 'end_time', 'description', 'mosque_id']
+            )
+
+            schedules_data = [{
+                'id': s['id'],
+                'topic': s['topic'],
+                'start_time': s['start_time'].isoformat() if s.get('start_time') else None,
+                'end_time': s['end_time'].isoformat() if s.get('end_time') else None,
+                'description': s['description'],
+                'mosque_name': s['mosque_id'][1] if s.get('mosque_id') else 'N/A',
+                'mosque_image_url': f"/web/image/mosque.mosque/{s['mosque_id'][0]}/image" if s.get('mosque_id') else None
+            } for s in schedules_raw]
+
+            response_data = {'status': 'success', 'data': schedules_data}
+            return Response(json.dumps(response_data), content_type='application/json', status=200)
+        except Exception as e:
+            _logger.error(f"Error fetching pending schedules: {e}", exc_info=True)
+            error_response = {'status': 'error', 'message': str(e)}
+            return Response(json.dumps(error_response), content_type='application/json', status=500)
+
+    @http.route('/api/v1/schedules/<int:schedule_id>/confirm', auth='user', methods=['POST'], type='json', csrf=False)
+    def confirm_schedule(self, schedule_id, **kwargs):
+        """Menjalankan action_confirm pada sebuah jadwal."""
+        try:
+            schedule = request.env['sermon.schedule'].browse(schedule_id)
+            # Validasi: Pastikan jadwal ada dan user-nya benar
+            if not schedule.exists() or schedule.preacher_id.user_id.id != request.uid:
+                return {'status': 'error', 'message': 'Jadwal tidak ditemukan atau Anda tidak berhak.'}
+            
+            schedule.action_confirm()
+            return {'status': 'success', 'message': 'Jadwal berhasil diterima!'}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+    @http.route('/api/v1/schedules/<int:schedule_id>/reject', auth='user', methods=['POST'], type='json', csrf=False)
+    def reject_schedule(self, schedule_id, **kwargs):
+        """Menjalankan action_reject pada sebuah jadwal."""
+        try:
+            schedule = request.env['sermon.schedule'].browse(schedule_id)
+            if not schedule.exists() or schedule.preacher_id.user_id.id != request.uid:
+                return {'status': 'error', 'message': 'Jadwal tidak ditemukan atau Anda tidak berhak.'}
+
+            schedule.action_reject()
+            return {'status': 'success', 'message': 'Jadwal telah ditolak.'}
+        except Exception as e:
+            return {'status': 'error', 'message': str(e)}
+
+
 
