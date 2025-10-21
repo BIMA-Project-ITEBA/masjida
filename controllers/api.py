@@ -158,14 +158,14 @@ class SermonAPIController(http.Controller):
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
-    @http.route('/api/register_user', type='json', auth='public', methods=['POST'], csrf=False)
+   @http.route('/api/register_user', type='json', auth='public', methods=['POST'], csrf=False)
     def register_user(self, **kw):
         """
         Menerima data dari form registrasi dan membuat record
-        res.users dan gymnest.user baru.
+        res.users dan preacher.preacher baru.
         """
-        print("......................",kw)
-        required_fields = ['name', 'email', 'password', 'phone', 'date_of_birth', 'gender','user_type']
+        _logger.info(f"Menerima permintaan registrasi: {kw}")
+        required_fields = ['name', 'email', 'password', 'phone', 'user_type']
 
         # Cek apakah semua field yang dibutuhkan ada
         if not all(field in kw for field in required_fields):
@@ -177,32 +177,40 @@ class SermonAPIController(http.Controller):
             if existing_user:
                 return {'status': 'error', 'message': 'Email already exists.'}
 
-            # 1. Buat record di res.users terlebih dahulu
-            if kw.get('user_type'):
+            if kw.get('user_type') == 'preacher':
+                # Dapatkan referensi grup Portal
+                portal_group_id = request.env.ref('base.group_portal').id
+
+                # 1. Buat record di res.users terlebih dahulu
                 new_user_vals = {
                     'name': kw.get('name'),
                     'login': kw.get('email'),
                     'password': kw.get('password'),
-                    # Odoo secara otomatis akan meng-hash password
+                    # Tambahkan pengguna ke grup Portal
+                    'groups_id': [(6, 0, [portal_group_id])]
                 }
                 new_user = request.env['res.users'].sudo().create(new_user_vals)
-                if kw.get('user_type') == 'preacher':
-                    # 2. Buat record di gymnest.user dengan menghubungkannya ke res.users
-                    new_gymnest_user_vals = {
-                        'user_id': new_user.id,
-                        'name':kw.get('name'),
-                        'phone': kw.get('mobile_number'),
-                        'date_of_birth': kw.get('date_of_birth'),
-                        'gender': kw.get('gender'),
-                        'state': 'draft',  # Default state
-                    }
-                    request.env['preacher.preacher'].sudo().create(new_gymnest_user_vals)
+                
+                # 2. Buat record di preacher.preacher
+                new_preacher_vals = {
+                    'user_id': new_user.id,
+                    'name': kw.get('name'),
+                    'phone': kw.get('phone'),
+                    'email': kw.get('email'),
+                    # Tambahkan field lain jika ada dari form registrasi
+                    # 'date_of_birth': kw.get('date_of_birth'),
+                    # 'gender': kw.get('gender'),
+                }
+                request.env['preacher.preacher'].sudo().create(new_preacher_vals)
 
                 return {'status': 'success', 'message': 'User registered successfully! Please log in.'}
+            else:
+                return {'status': 'error', 'message': 'Invalid user type.'}
 
         except Exception as e:
             _logger.error(f"Error during user registration: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
+
 
      # --- FUNGSI BARU UNTUK MENGAMBIL PROFIL LENGKAP GYMNEST USER ---
     @http.route('/api/profile', type='http', auth='user', methods=['GET'], csrf=False)
