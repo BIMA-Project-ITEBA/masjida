@@ -158,7 +158,7 @@ class SermonAPIController(http.Controller):
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
-   @http.route('/api/register_user', type='json', auth='public', methods=['POST'], csrf=False)
+    @http.route('/api/register_user', type='json', auth='public', methods=['POST'], csrf=False)
     def register_user(self, **kw):
         """
         Menerima data dari form registrasi dan membuat record
