@@ -210,8 +210,12 @@ class SermonAPIController(http.Controller):
         try:
             # Cari gymnest.user yang terhubung dengan res.users yang sedang login
             user = request.env['preacher.preacher'].search([('user_id', '=', request.uid)], limit=1)
-            if not user.exists():
-                return request.make_response('user profile not found.', status=404)
+            if not user:
+                error_response = {'status': 'error', 'message': 'Profil pendakwah tidak ditemukan.'}
+                return Response(json.dumps(error_response), content_type='application/json', status=404)
+
+            # --- PERBAIKAN: Gunakan sudo() untuk melewati access rights ---
+            user = user.sudo()
             schedules = request.env['sermon.schedule'].search_read(
             [('preacher_id', '=', user.id), ('state', '=', 'confirmed')],
             ['id', 'topic', 'start_time', 'mosque_id']
