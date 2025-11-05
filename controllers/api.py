@@ -246,7 +246,7 @@ class SermonAPIController(http.Controller):
         """Mengambil profil lengkap Pendakwah (preacher) yang sedang login."""
         try:
             # Mencari preacher.preacher yang terhubung dengan user (res.users) yang sedang login
-            user = request.env['preacher.preacher'].search([('user_id', '=', request.uid)], limit=1)
+            user = request.env['preacher.preacher'].sudo().search([('user_id', '=', request.uid)], limit=1)
             if not user:
                 error_response = {'status': 'error', 'message': 'Profil pendakwah tidak ditemukan.'}
                 return Response(json.dumps(error_response), content_type='application/json', status=404)
@@ -306,7 +306,7 @@ class SermonAPIController(http.Controller):
         """
         try:
             # Menggunakan 'preacher.preacher'
-            user = request.env['preacher.preacher'].search([('user_id', '=', request.uid)], limit=1)
+            user = request.env['preacher.preacher'].sudo().search([('user_id', '=', request.uid)], limit=1)
             if not user.exists():
                 return {'status': 'error', 'message': 'Profil Pendakwah (preacher.preacher) not found.'}
 
