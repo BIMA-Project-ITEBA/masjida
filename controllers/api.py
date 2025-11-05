@@ -15,14 +15,44 @@ def _get_image_url(record, field_name):
 
 class SermonAPIController(http.Controller):
      
+    # --- FUNGSI INI TELAH DIMODIFIKASI ---
     @http.route('/api/v1/mosques', auth='public', methods=['GET'], type='http', cors='*')
-    def get_mosques(self, **kwargs):
-        """Endpoint untuk mendapatkan daftar semua masjid."""
+    def get_mosques(self, search=None, area_id=None, **kwargs):
+        """
+        Endpoint untuk mendapatkan daftar semua masjid.
+        Mendukung pencarian berdasarkan 'name' dan 'area_id.name'.
+        Mendukung filter berdasarkan 'area_id'.
+        """
         try:
+            # Domain adalah list untuk filter Odoo
+            domain = []
+            
+            # 1. Logika Pencarian (Search)
+            if search:
+                # 'ilike' artinya case-insensitive search (tidak peduli huruf besar/kecil)
+                # Domain OR: Cari berdasarkan nama masjid ATAU nama area
+                domain += [
+                    '|',
+                    ('name', 'ilike', search),
+                    ('area_id.name', 'ilike', search) 
+                ]
+
+            # 2. Logika Filter (Area)
+            if area_id:
+                try:
+                    # Pastikan area_id adalah angka (integer)
+                    area_id_int = int(area_id)
+                    domain.append(('area_id', '=', area_id_int))
+                except ValueError:
+                    pass # Abaikan jika area_id tidak valid (misal: "null" atau string kosong)
+
+            # Terapkan domain (filter) ke pencarian
             mosques_raw = request.env['mosque.mosque'].search_read(
-                [],
-                ['id', 'name', 'code', 'area_id', 'image']
+                domain,
+                ['id', 'name', 'code', 'area_id', 'image'],
+                order='name ASC' # Urutkan berdasarkan nama
             )
+            
             mosques_data = [{
                 'id': m['id'],
                 'name': m['name'],
@@ -37,7 +67,9 @@ class SermonAPIController(http.Controller):
                 'data': mosques_data
             }
             return Response(json.dumps(response_data), content_type='application/json', status=200)
+        
         except Exception as e:
+            _logger.error(f"Error saat get_mosques: {e}", exc_info=True)
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
@@ -140,7 +172,8 @@ class SermonAPIController(http.Controller):
     def get_areas(self, **kwargs):
         """Endpoint untuk mendapatkan daftar semua area."""
         try:
-            areas = request.env['area.area'].search_read([], ['id', 'name'])
+            # Mengurutkan berdasarkan nama area
+            areas = request.env['area.area'].search_read([], ['id', 'name'], order='name ASC')
             response_data = {'status': 'success', 'data': areas}
             return Response(json.dumps(response_data), content_type='application/json', status=200)
         except Exception as e:
@@ -151,7 +184,7 @@ class SermonAPIController(http.Controller):
     def get_specializations(self, **kwargs):
         """Endpoint untuk mendapatkan daftar semua spesialisasi."""
         try:
-            specializations = request.env['preacher.specialization'].search_read([], ['id', 'name'])
+            specializations = request.env['preacher.specialization'].search_read([], ['id', 'name'], order='name ASC')
             response_data = {'status': 'success', 'data': specializations}
             return Response(json.dumps(response_data), content_type='application/json', status=200)
         except Exception as e:
@@ -269,23 +302,35 @@ class SermonAPIController(http.Controller):
         Hanya akan mengupdate field yang diizinkan
         """
         try:
-            user = request.env['gymnest.user'].search([('user_id', '=', request.uid)], limit=1)
+            # !! PERHATIAN: Model 'gymnest.user' tidak ada di project Anda.
+            # !! Saya ganti ke 'preacher.preacher' sesuai konteks
+            user = request.env['preacher.preacher'].search([('user_id', '=', request.uid)], limit=1)
             if not user.exists():
-                return {'status': 'error', 'message': 'Gymnest user not found.'}
+                return {'status': 'error', 'message': 'Profil Pendakwah (preacher.preacher) not found.'}
 
             # Siapkan dictionary berisi field yang boleh diupdate
-            allowed_fields = ['mobile_number', 'address', 'weight', 'height', 'geolocation']
+            # Sesuaikan field ini dengan yang ada di model 'preacher.preacher'
+            allowed_fields = [
+                'name', 
+                'phone', 
+                'bio', 
+                'education', 
+                'date_of_birth', 
+                'gender', 
+                'area_id', 
+                'specialization_id'
+            ]
             vals_to_update = {}
             for field in allowed_fields:
                 if field in kw:
                     vals_to_update[field] = kw.get(field)
             
             if vals_to_update:
-                user.write(vals_to_update)
+                user.sudo().write(vals_to_update)
             
             return {'status': 'success', 'message': 'Profile updated successfully.'}
         except Exception as e:
-            _logger.error(f"Error updating gymnest user profile: {e}", exc_info=True)
+            _logger.error(f"Error updating preacher user profile: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
 
 # --- ENDPOINT BARU UNTUK NOTIFIKASI UNDANGAN ---
@@ -329,7 +374,7 @@ class SermonAPIController(http.Controller):
     def confirm_schedule(self, schedule_id, **kwargs):
         """Menjalankan action_confirm pada sebuah jadwal."""
         try:
-            schedule = request.env['sermon.schedule'].browse(schedule_id)
+            schedule = request.env['sermon.schedule'].sudo().browse(schedule_id)
             # Validasi: Pastikan jadwal ada dan user-nya benar
             if not schedule.exists() or schedule.preacher_id.user_id.id != request.uid:
                 return {'status': 'error', 'message': 'Jadwal tidak ditemukan atau Anda tidak berhak.'}
@@ -337,20 +382,19 @@ class SermonAPIController(http.Controller):
             schedule.action_confirm()
             return {'status': 'success', 'message': 'Jadwal berhasil diterima!'}
         except Exception as e:
+            _logger.error(f"Error confirming schedule: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
 
     @http.route('/api/v1/schedules/<int:schedule_id>/reject', auth='user', methods=['POST'], type='json', csrf=False)
     def reject_schedule(self, schedule_id, **kwargs):
         """Menjalankan action_reject pada sebuah jadwal."""
         try:
-            schedule = request.env['sermon.schedule'].browse(schedule_id)
+            schedule = request.env['sermon.schedule'].sudo().browse(schedule_id)
             if not schedule.exists() or schedule.preacher_id.user_id.id != request.uid:
                 return {'status': 'error', 'message': 'Jadwal tidak ditemukan atau Anda tidak berhak.'}
 
             schedule.action_reject()
             return {'status': 'success', 'message': 'Jadwal telah ditolak.'}
         except Exception as e:
+            _logger.error(f"Error rejecting schedule: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
-
-
-
