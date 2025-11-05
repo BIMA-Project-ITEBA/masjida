@@ -103,14 +103,18 @@ class SermonAPIController(http.Controller):
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
+    # --- FUNGSI INI DIMODIFIKASI UNTUK GOOGLE MAPS ---
     @http.route('/api/v1/mosques/<int:mosque_id>', auth='public', methods=['GET'], type='http', cors='*')
     def get_mosque_detail(self, mosque_id, **kwargs):
         """Endpoint untuk mendapatkan detail satu masjid beserta jadwalnya."""
-        mosque = request.env['mosque.mosque'].browse(mosque_id)
+        
+        # Gunakan .sudo() untuk mengatasi masalah akses 'area.area' oleh 'public user'
+        mosque = request.env['mosque.mosque'].sudo().browse(mosque_id)
         if not mosque.exists():
             error_response = {'status': 'error', 'message': 'Mosque not found'}
             return Response(json.dumps(error_response), content_type='application/json', status=404)
         
+        # Jadwal bisa diakses publik (sesuai ir.rule Anda)
         schedules = request.env['sermon.schedule'].search_read(
             [('mosque_id', '=', mosque_id), ('state', '=', 'confirmed')],
             ['id', 'topic', 'start_time', 'preacher_id']
@@ -124,6 +128,12 @@ class SermonAPIController(http.Controller):
             'full_address': mosque.full_address,
             'description': mosque.description,
             'image_url': _get_image_url(mosque, 'image'),
+            
+            # --- TAMBAHAN BARU UNTUK GOOGLE MAPS ---
+            'latitude': mosque.latitude,
+            'longitude': mosque.longitude,
+            # -------------------------------------
+            
             'schedules': [
                 {
                     'id': s['id'],
@@ -140,7 +150,8 @@ class SermonAPIController(http.Controller):
     @http.route('/api/v1/preachers/<int:preacher_id>', auth='public', methods=['GET'], type='http', cors='*')
     def get_preacher_detail(self, preacher_id, **kwargs):
         """Endpoint untuk mendapatkan detail satu pendakwah beserta jadwalnya."""
-        preacher = request.env['preacher.preacher'].browse(preacher_id)
+        # Gunakan .sudo() untuk mengatasi masalah akses 'area.area' dan 'specialization' oleh 'public user'
+        preacher = request.env['preacher.preacher'].sudo().browse(preacher_id)
         if not preacher.exists():
             error_response = {'status': 'error', 'message': 'Preacher not found'}
             return Response(json.dumps(error_response), content_type='application/json', status=404)
@@ -239,34 +250,30 @@ class SermonAPIController(http.Controller):
             return {'status': 'error', 'message': str(e)}
 
 
-    # --- FUNGSI INI DIMODIFIKASI ---
-    # Mengganti nama fungsi dari get__user_profile menjadi get_preacher_profile
     @http.route('/api/profile', type='http', auth='user', methods=['GET'], csrf=False)
     def get_preacher_profile(self, **kw):
         """Mengambil profil lengkap Pendakwah (preacher) yang sedang login."""
         try:
-            # Mencari preacher.preacher yang terhubung dengan user (res.users) yang sedang login
+            # Menggunakan .sudo() untuk memastikan bisa membaca relasi (area/specialization)
+            # meskipun user portal tidak punya akses langsung ke model tsb.
             user = request.env['preacher.preacher'].sudo().search([('user_id', '=', request.uid)], limit=1)
             if not user:
                 error_response = {'status': 'error', 'message': 'Profil pendakwah tidak ditemukan.'}
                 return Response(json.dumps(error_response), content_type='application/json', status=404)
 
-            # (Sudo tidak diperlukan di sini karena 'auth=user' dan ir.rule sudah diatur)
+            # Jadwal dibaca sebagai user (bukan sudo) untuk menghormati ir.rules
             schedules = request.env['sermon.schedule'].search_read(
                 [('preacher_id', '=', user.id), ('state', '=', 'confirmed')],
                 ['id', 'topic', 'start_time', 'mosque_id']
             )
             
-            # Ambil semua data yang dibutuhkan untuk Halaman Profil dan Halaman Edit Profil
             profile_data = {
                 'id': user.id,
                 'name': user.name,
                 
-                # Mengirim ID dan Nama untuk Area (untuk pre-fill dropdown)
                 'area_id': user.area_id.id or None,
                 'area_name': user.area_id.name if user.area_id else None,
                 
-                # Mengirim ID dan Nama untuk Spesialisasi (untuk pre-fill dropdown)
                 'specialization_id': user.specialization_id.id or None,
                 'specialization_name': user.specialization_id.name if user.specialization_id else None,
                 
@@ -296,8 +303,6 @@ class SermonAPIController(http.Controller):
             _logger.error(f"Error fetching preacher profile: {e}", exc_info=True)
             return request.make_response('Internal Server Error', status=500)
 
-    # --- FUNGSI INI DIPERBARUI ---
-    # Mengganti nama fungsi dari update_gymnest_user_profile menjadi update_preacher_profile
     @http.route('/api/update_profile', type='json', auth='user', methods=['POST'], csrf=False)
     def update_preacher_profile(self, **kw):
         """
@@ -306,11 +311,12 @@ class SermonAPIController(http.Controller):
         """
         try:
             # Menggunakan 'preacher.preacher'
+            # .sudo() diperlukan agar bisa menulis ke data milik user lain (jika ir.rule ketat)
+            # Namun, kita filter berdasarkan request.uid untuk keamanan
             user = request.env['preacher.preacher'].sudo().search([('user_id', '=', request.uid)], limit=1)
             if not user.exists():
                 return {'status': 'error', 'message': 'Profil Pendakwah (preacher.preacher) not found.'}
 
-            # Daftar field yang diizinkan untuk diupdate dari Flutter
             allowed_fields = [
                 'name', 
                 'phone', 
@@ -329,25 +335,19 @@ class SermonAPIController(http.Controller):
                 if field in kw:
                     value = kw.get(field)
                     
-                    # Konversi khusus jika diperlukan
                     if field == 'period' and value is not None:
                         try:
-                            # Konversi ke float
                             vals_to_update[field] = float(value)
                         except (ValueError, TypeError):
-                            pass # Abaikan jika format angka salah
+                            pass 
                     elif field in ['area_id', 'specialization_id'] and (value is None or value is False):
-                        # Jika Flutter mengirim 'null' atau 'false' untuk Many2one, set ke False
                          vals_to_update[field] = False
                     elif value is not None:
-                        # Semua field lain (termasuk 'image' base64)
                         vals_to_update[field] = value
             
             if vals_to_update:
                 _logger.info(f"Updating profile for user {request.uid} with values: {list(vals_to_update.keys())}")
-                # Menggunakan sudo() untuk memastikan hak akses penulisan terpenuhi
-                # (Sebaiknya gunakan ir.rule yang tepat, tapi sudo() memastikan ini berjalan)
-                user.sudo().write(vals_to_update)
+                user.write(vals_to_update) # user sudah .sudo()
             
             return {'status': 'success', 'message': 'Profile updated successfully.'}
         except Exception as e:
@@ -392,7 +392,6 @@ class SermonAPIController(http.Controller):
     def confirm_schedule(self, schedule_id, **kwargs):
         """Menjalankan action_confirm pada sebuah jadwal."""
         try:
-            # Menggunakan sudo() agar bisa melewati ir.rule jika diperlukan
             schedule = request.env['sermon.schedule'].sudo().browse(schedule_id)
             if not schedule.exists() or schedule.preacher_id.user_id.id != request.uid:
                 return {'status': 'error', 'message': 'Jadwal tidak ditemukan atau Anda tidak berhak.'}
@@ -407,7 +406,6 @@ class SermonAPIController(http.Controller):
     def reject_schedule(self, schedule_id, **kwargs):
         """Menjalankan action_reject pada sebuah jadwal."""
         try:
-            # Menggunakan sudo() agar bisa melewati ir.rule jika diperlukan
             schedule = request.env['sermon.schedule'].sudo().browse(schedule_id)
             if not schedule.exists() or schedule.preacher_id.user_id.id != request.uid:
                 return {'status': 'error', 'message': 'Jadwal tidak ditemukan atau Anda tidak berhak.'}
