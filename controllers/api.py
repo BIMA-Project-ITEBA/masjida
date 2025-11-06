@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from odoo import http
+from odoo import http, fields # <-- 'fields' ditambahkan
 from odoo.http import request, Response
 import json
 import logging 
+from datetime import datetime # <-- 'datetime' ditambahkan
 
 # Mengatur logger untuk debugging
 _logger = logging.getLogger(__name__) 
@@ -103,18 +104,18 @@ class SermonAPIController(http.Controller):
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
-    # --- FUNGSI INI DIMODIFIKASI UNTUK GOOGLE MAPS ---
+    # --- FUNGSI INI DIMODIFIKASI (UNTUK GOOGLE MAPS) ---
     @http.route('/api/v1/mosques/<int:mosque_id>', auth='public', methods=['GET'], type='http', cors='*')
     def get_mosque_detail(self, mosque_id, **kwargs):
         """Endpoint untuk mendapatkan detail satu masjid beserta jadwalnya."""
         
-        # Gunakan .sudo() untuk mengatasi masalah akses 'area.area' oleh 'public user'
+        # Gunakan .sudo() untuk bypass izin baca public user (untuk area, lat, lon)
         mosque = request.env['mosque.mosque'].sudo().browse(mosque_id)
         if not mosque.exists():
             error_response = {'status': 'error', 'message': 'Mosque not found'}
             return Response(json.dumps(error_response), content_type='application/json', status=404)
         
-        # Jadwal bisa diakses publik (sesuai ir.rule Anda)
+        # Jadwal (ir.rule publik sudah memperbolehkan ini)
         schedules = request.env['sermon.schedule'].search_read(
             [('mosque_id', '=', mosque_id), ('state', '=', 'confirmed')],
             ['id', 'topic', 'start_time', 'preacher_id']
@@ -150,7 +151,7 @@ class SermonAPIController(http.Controller):
     @http.route('/api/v1/preachers/<int:preacher_id>', auth='public', methods=['GET'], type='http', cors='*')
     def get_preacher_detail(self, preacher_id, **kwargs):
         """Endpoint untuk mendapatkan detail satu pendakwah beserta jadwalnya."""
-        # Gunakan .sudo() untuk mengatasi masalah akses 'area.area' dan 'specialization' oleh 'public user'
+        # .sudo() untuk membaca relasi (area/specialization)
         preacher = request.env['preacher.preacher'].sudo().browse(preacher_id)
         if not preacher.exists():
             error_response = {'status': 'error', 'message': 'Preacher not found'}
@@ -206,6 +207,97 @@ class SermonAPIController(http.Controller):
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
+    # --- ENDPOINT BARU UNTUK HALAMAN JADWAL PUBLIK ---
+    @http.route('/api/v1/schedules/public', auth='public', methods=['GET'], type='http', cors='*')
+    def get_public_schedules(self, search=None, area_id=None, day_of_week=None, **kwargs):
+        """
+        Endpoint untuk mendapatkan daftar jadwal publik (confirmed & future).
+        Mendukung pencarian (topik, pendakwah), filter area, dan filter hari (day_of_week).
+        day_of_week: 0=Senin, 1=Selasa, ..., 6=Minggu (sesuai Python .weekday())
+        """
+        _logger.info(f"get_public_schedules dipanggil dengan search: {search}, area_id: {area_id}, day_of_week: {day_of_week}")
+        
+        try:
+            # 1. Domain Awal (Confirmed & Future)
+            domain = [
+                ('state', '=', 'confirmed'),
+                ('start_time', '>=', fields.Datetime.now())
+            ]
+
+            # 2. Filter Pencarian (Topik / Pendakwah)
+            if search:
+                domain += [
+                    '|',
+                    ('topic', 'ilike', search),
+                    ('preacher_id.name', 'ilike', search)
+                ]
+
+            # 3. Filter Area (Area Masjid)
+            if area_id:
+                try:
+                    domain.append(('mosque_id.area_id', '=', int(area_id)))
+                except (ValueError, TypeError):
+                    _logger.warning(f"Invalid area_id passed: {area_id}")
+                    pass # Abaikan area_id yang tidak valid
+
+            # 4. Ambil Field yang Diperlukan
+            fields_to_read = ['id', 'topic', 'start_time', 'preacher_id', 'mosque_id']
+            
+            # 5. Search Odoo (tanpa filter hari)
+            # .sudo() diperlukan agar public user bisa filter by preacher.name / mosque.area_id
+            schedules_raw = request.env['sermon.schedule'].sudo().search_read(
+                domain,
+                fields_to_read,
+                order='start_time ASC' # Urutkan dari yang paling dekat
+            )
+
+            # 6. Filter Hari (Python-side)
+            final_schedules = []
+            
+            dow_filter = None
+            if day_of_week:
+                try:
+                    dow_filter = int(day_of_week)
+                except (ValueError, TypeError):
+                    dow_filter = None
+
+            for s in schedules_raw:
+                # 'start_time' adalah objek datetime dari Odoo
+                if not s.get('start_time'):
+                    continue 
+                
+                # Filter berdasarkan Hari (jika ada)
+                if dow_filter is not None:
+                    # .weekday() -> Senin=0, Minggu=6
+                    if s['start_time'].weekday() != dow_filter:
+                        continue # Lewati jika harinya tidak cocok
+                
+                # 7. Format Data (Data yang lolos filter)
+                final_schedules.append({
+                    'id': s['id'],
+                    'topic': s['topic'],
+                    'start_time': s['start_time'].isoformat(),
+                    'preacher_name': s['preacher_id'][1] if s.get('preacher_id') else 'N/A',
+                    'mosque_name': s['mosque_id'][1] if s.get('mosque_id') else 'N/A',
+                    'mosque_id': s['mosque_id'][0] if s.get('mosque_id') else None,
+                    # (Kita tidak perlu mosque_area_name di list, mosque_name sudah cukup)
+                })
+
+            # 8. Kirim Respon
+            response_data = {
+                'status': 'success',
+                'count': len(final_schedules),
+                'data': final_schedules
+            }
+            # default=str digunakan untuk menangani objek datetime (meskipun sudah isoformat)
+            return Response(json.dumps(response_data, default=str), content_type='application/json', status=200)
+
+        except Exception as e:
+            _logger.error(f"Error saat get_public_schedules: {e}", exc_info=True)
+            error_response = {'status': 'error', 'message': str(e)}
+            return Response(json.dumps(error_response), content_type='application/json', status=500)
+    # --------------------------------------------------
+
     @http.route('/api/register_user', type='json', auth='public', methods=['POST'], csrf=False)
     def register_user(self, **kw):
         """
@@ -254,14 +346,11 @@ class SermonAPIController(http.Controller):
     def get_preacher_profile(self, **kw):
         """Mengambil profil lengkap Pendakwah (preacher) yang sedang login."""
         try:
-            # Menggunakan .sudo() untuk memastikan bisa membaca relasi (area/specialization)
-            # meskipun user portal tidak punya akses langsung ke model tsb.
             user = request.env['preacher.preacher'].sudo().search([('user_id', '=', request.uid)], limit=1)
             if not user:
                 error_response = {'status': 'error', 'message': 'Profil pendakwah tidak ditemukan.'}
                 return Response(json.dumps(error_response), content_type='application/json', status=404)
 
-            # Jadwal dibaca sebagai user (bukan sudo) untuk menghormati ir.rules
             schedules = request.env['sermon.schedule'].search_read(
                 [('preacher_id', '=', user.id), ('state', '=', 'confirmed')],
                 ['id', 'topic', 'start_time', 'mosque_id']
@@ -310,9 +399,6 @@ class SermonAPIController(http.Controller):
         Menerima 'image' sebagai string base64.
         """
         try:
-            # Menggunakan 'preacher.preacher'
-            # .sudo() diperlukan agar bisa menulis ke data milik user lain (jika ir.rule ketat)
-            # Namun, kita filter berdasarkan request.uid untuk keamanan
             user = request.env['preacher.preacher'].sudo().search([('user_id', '=', request.uid)], limit=1)
             if not user.exists():
                 return {'status': 'error', 'message': 'Profil Pendakwah (preacher.preacher) not found.'}
@@ -327,7 +413,7 @@ class SermonAPIController(http.Controller):
                 'area_id', 
                 'specialization_id',
                 'period',
-                'image' # 'image' (tipe fields.Image) bisa menerima base64
+                'image' 
             ]
             
             vals_to_update = {}
