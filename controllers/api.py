@@ -330,6 +330,9 @@ class SermonAPIController(http.Controller):
                     'name': kw.get('name'),
                     'phone': kw.get('phone'),
                     'email': kw.get('email'),
+                    'date_of_birth': kw.get('date_of_birth'),
+                    'gender': kw.get('gender'),
+                    'user_type': 'preacher',
                 }
                 request.env['preacher.preacher'].sudo().create(new_preacher_vals)
 
