@@ -88,8 +88,12 @@ class SermonAPIController(http.Controller):
                 'id': p['id'],
                 'name': p['name'],
                 'code': p['code'],
+                # Mengirim NAMA untuk tampilan
                 'specialization': p['specialization_id'][1] if p.get('specialization_id') else 'N/A',
                 'area': p['area_id'][1] if p.get('area_id') else 'N/A',
+                # BARU: Mengirim ID untuk filtering
+                'specialization_id': p['specialization_id'][0] if p.get('specialization_id') else None,
+                'area_id': p['area_id'][0] if p.get('area_id') else None,
                 'image_url': f'/web/image/preacher.preacher/{p["id"]}/image' if p.get('image') else None
             } for p in preachers_raw]
 
@@ -100,7 +104,6 @@ class SermonAPIController(http.Controller):
             }
             return Response(json.dumps(response_data), content_type='application/json', status=200)
         except Exception as e:
-            _logger.error(f"Error saat get_preachers: {e}", exc_info=True)
             error_response = {'status': 'error', 'message': str(e)}
             return Response(json.dumps(error_response), content_type='application/json', status=500)
 
@@ -332,7 +335,6 @@ class SermonAPIController(http.Controller):
                     'email': kw.get('email'),
                     'date_of_birth': kw.get('date_of_birth'),
                     'gender': kw.get('gender'),
-                    'user_type': 'preacher',
                 }
                 request.env['preacher.preacher'].sudo().create(new_preacher_vals)
 
@@ -503,4 +505,38 @@ class SermonAPIController(http.Controller):
             return {'status': 'success', 'message': 'Jadwal telah ditolak.'}
         except Exception as e:
             _logger.error(f"Error rejecting schedule: {e}", exc_info=True)
+            return {'status': 'error', 'message': str(e)}
+
+    @http.route('/api/v1/proposals', auth='user', methods=['POST'], type='json', csrf=False)
+    def create_proposal(self, **kw):
+        """
+        Membuat proposal dakwah (sermon.proposal) dari Pendakwah yang login.
+        Endpoint ini memerlukan autentikasi (auth='user').
+        preacher_id akan diisi otomatis berdasarkan user yang login (sesuai default model).
+        """
+        data = request.jsonrequest.get('params', {})
+        _logger.info(f"Menerima permintaan proposal: {data} oleh user {request.uid}")
+
+        required_fields = ['mosque_id', 'proposed_topic', 'proposed_start_time']
+        if not all(field in data for field in required_fields):
+            _logger.warning("Permintaan proposal gagal: field tidak lengkap.")
+            return {'status': 'error', 'message': 'Field tidak lengkap (mosque_id, proposed_topic, proposed_start_time).'}
+
+        try:
+            # Buat proposal baru. preacher_id akan diisi oleh default model
+            proposal = request.env['sermon.proposal'].create({
+                'mosque_id': data.get('mosque_id'),
+                'proposed_topic': data.get('proposed_topic'),
+                'proposed_start_time': data.get('proposed_start_time'),
+                'notes': data.get('notes'),
+            })
+            
+            # Langsung ubah statusnya menjadi 'submitted'
+            proposal.action_submit()
+            
+            _logger.info(f"Proposal {proposal.id} berhasil dibuat dan dikirim.")
+            return {'status': 'success', 'message': 'Proposal berhasil diajukan.', 'proposal_id': proposal.id}
+
+        except Exception as e:
+            _logger.error(f"Gagal membuat proposal: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
