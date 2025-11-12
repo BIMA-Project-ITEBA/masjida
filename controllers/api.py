@@ -514,7 +514,7 @@ class SermonAPIController(http.Controller):
         Endpoint ini memerlukan autentikasi (auth='user').
         preacher_id akan diisi otomatis berdasarkan user yang login (sesuai default model).
         """
-        data = request.jsonrequest.get('params', {})
+        data = kw
         _logger.info(f"Menerima permintaan proposal: {data} oleh user {request.uid}")
 
         required_fields = ['mosque_id', 'proposed_topic', 'proposed_start_time']
