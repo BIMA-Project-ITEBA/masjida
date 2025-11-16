@@ -8,8 +8,9 @@
                 <field name="name"/>
                 <field name="position"/>
                 <field name="mosque_id"/>
-                <field name="user_id"/>
-                <field name="phone"/>
+                <field name="email"/>
+                <field name="user_id" optional="show"/>
+                <field name="phone" optional="hide"/>
             </list>
         </field>
     </record>
@@ -24,9 +25,11 @@
                         <field name="name"/>
                         <field name="position"/>
                         <field name="phone"/>
-                        <field name="email"/>
-                        <field name="mosque_id"/>
-                        <field name="user_id"/>
+                        <!-- Jadikan email required, karena akan jadi basis login -->
+                        <field name="email" required="1" widget="email"/>
+                        <field name="mosque_id" context="{'default_mosque_id': mosque_id}"/>
+                        <field name="user_id" readonly="1" force_save="1"
+                            help="Akun pengguna akan otomatis ter-link atau dibuat berdasarkan Email yang dimasukkan."/>
                     </group>
                 </sheet>
             </form>
@@ -44,23 +47,9 @@
         parent="menu_sermon_master_data"
         sequence="15"/>
 
-    <!-- <record id="view_mosque_mosque_form_inherit_board" model="ir.ui.view">
-        <field name="name">mosque.mosque.form.inherit.board</field>
-        <field name="model">mosque.mosque</field>
-        <field name="inherit_id" ref="masjida.view_mosque_mosque_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//notebook/page[@string='Admins']" position="replace">
-                <page string="Board Members">
-                    <field name="board_member_ids">
-                        <list editable="bottom">
-                            <field name="name"/>
-                            <field name="position"/>
-                            <field name="user_id"/>
-                            <field name="phone"/>
-                        </list>
-                    </field>
-                </page>
-            </xpath>
-        </field>
-    </record> -->
+    <!-- 
+        XML berikut ini (yang Anda komentari) sudah benar. 
+        Ini akan menggantikan tab 'Admins' (jika ada) di form Masjid 
+        dengan tab 'Board Members' yang inline.
+    -->
 </odoo>

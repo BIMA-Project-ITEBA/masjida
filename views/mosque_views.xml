@@ -65,16 +65,17 @@
                          <!-- <page string="Admins">
                             <field name="admin_ids" widget="many2many_tags"/>
                         </page> -->
-                        <page string="Board Members">
-                        <field name="board_member_ids">
-                            <list editable="bottom">
-                                <field name="name"/>
-                                <field name="position"/>
-                                <field name="user_id"/>
-                                <field name="phone"/>
-                            </list>
-                        </field>
-                    </page>
+                        <page string="Board Members (Staf Admin)">
+                            <field name="board_member_ids" context="{'default_mosque_id': active_id}">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="position"/>
+                                    <field name="email" widget="email" required="1"/>
+                                    <field name="user_id" readonly="1" force_save="1"/>
+                                    <field name="phone"/>
+                                </list>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
             </form>
