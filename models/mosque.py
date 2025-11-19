@@ -44,3 +44,15 @@ class Mosque(models.Model):
         for record in self:
             parts = [record.street, record.area_id.name, record.zip_code, record.country_id.name]
             record.full_address = ', '.join(part for part in parts if part)
+
+    # --- METODE BARU: Override name_get ---
+    @api.depends('name', 'code', 'area_id')
+    def name_get(self):
+        """Menampilkan format: [CODE] Nama Masjid (Area)"""
+        result = []
+        for mosque in self:
+            name = f"[{mosque.code or 'N/A'}] {mosque.name or 'N/A'}"
+            if mosque.area_id.name:
+                name += f" ({mosque.area_id.name})"
+            result.append((mosque.id, name))
+        return result

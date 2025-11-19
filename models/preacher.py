@@ -5,6 +5,7 @@ from odoo import models, fields, api
 class Preacher(models.Model):
     _name = 'preacher.preacher'
     _description = 'Preacher Master Data Model'
+    _rec_name = 'code',''
     
     code = fields.Char(string='code')
     name = fields.Char(string='Preacher Name', required=True)
@@ -75,3 +76,15 @@ class Preacher(models.Model):
         # 4. Buat record preacher
         preacher = super(Preacher, self).create(vals)
         return preacher
+
+
+    @api.depends('name', 'code', 'area_id')
+    def name_get(self):
+        """Menampilkan format: [CODE] Nama Masjid (Area)"""
+        result = []
+        for preacher in self:
+            name = f"[{preacher.code or 'N/A'}] {preacher.name or 'N/A'}"
+            if preacher.area_id.name:
+                name += f" ({preacher.area_id.name})"
+            result.append((preacher.id, name))
+        return result
