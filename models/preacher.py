@@ -16,6 +16,7 @@ class Preacher(models.Model):
     bio = fields.Html(string='Biography')
     education = fields.Char(string='Education')
     date_of_birth = fields.Date(string='Date of birth')
+    street = fields.Char(string='Street')
     # FIELD DIPERBARUI: Dari Char menjadi Many2one
     specialization_id = fields.Many2one('preacher.specialization', string='Specialization')
     
