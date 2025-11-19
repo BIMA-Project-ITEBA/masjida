@@ -83,13 +83,12 @@ class MosqueBoard(models.Model):
                     user = self.env['res.users'].sudo().create(user_vals)
 
                 # Tambahkan grup yang diperlukan
+                # Tambahkan grup yang diperlukan (TANPA portal)
                 groups_to_add = []
                 if not user.has_group('masjida.group_mosque_admin'):
                     groups_to_add.append(admin_group.id)
                 if not user.has_group('base.group_user'):
-                    groups_to_add.append(user_group.id) # Internal User
-                if not user.has_group('base.group_portal'):
-                    groups_to_add.append(portal_group.id) # Portal User
+                    groups_to_add.append(user_group.id)  # Internal User
 
                 if groups_to_add:
                     user.write({'groups_id': [(4, gid) for gid in groups_to_add]})
