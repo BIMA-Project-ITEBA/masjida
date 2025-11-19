@@ -37,6 +37,7 @@ class Mosque(models.Model):
     
     # # Relation to view incoming proposals for this mosque
     proposal_ids = fields.One2many('sermon.proposal', 'mosque_id', string='Incoming Sermon Proposals')
+    display_name = fields.Char(compute="_compute_display_name", store=True)
     
     @api.depends('street', 'area_id', 'zip_code', 'country_id')
     def _compute_full_address(self):
@@ -46,13 +47,10 @@ class Mosque(models.Model):
             record.full_address = ', '.join(part for part in parts if part)
 
     # --- METODE BARU: Override name_get ---
-    @api.depends('name', 'code', 'area_id')
-    def name_get(self):
-        """Menampilkan format: [CODE] Nama Masjid (Area)"""
-        result = []
+    @api.depends('name', 'code', 'area_id.name')
+    def _compute_display_name(self):
         for mosque in self:
             name = f"[{mosque.code or 'N/A'}] {mosque.name or 'N/A'}"
             if mosque.area_id.name:
                 name += f" ({mosque.area_id.name})"
-            result.append((mosque.id, name))
-        return result
+            mosque.display_name = name

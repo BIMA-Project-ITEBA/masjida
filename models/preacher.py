@@ -5,6 +5,8 @@ from odoo import models, fields, api
 class Preacher(models.Model):
     _name = 'preacher.preacher'
     _description = 'Preacher Master Data Model'
+    _rec_name = "display_name"
+
     
     code = fields.Char(string='code')
     name = fields.Char(string='Preacher Name', required=True)
@@ -46,6 +48,16 @@ class Preacher(models.Model):
         ('cancelled', 'Cancelled')          # Cancelled by either party
     ], string='Status', default='draft', readonly=True, copy=False)
 
+    display_name = fields.Char(compute="_compute_display_name", store=True)
+
+    @api.depends('name', 'code', 'area_id.name')
+    def _compute_display_name(self):
+        for preacher in self:
+            name = f"[{preacher.code or 'N/A'}] {preacher.name or 'N/A'}"
+            if preacher.area_id.name:
+                name += f" ({preacher.area_id.name})"
+            preacher.display_name = name
+
     @api.model
     def create(self, vals):
         """
@@ -75,15 +87,3 @@ class Preacher(models.Model):
         # 4. Buat record preacher
         preacher = super(Preacher, self).create(vals)
         return preacher
-
-
-    @api.depends('name', 'code', 'area_id')
-    def name_get(self):
-        """Menampilkan format: [CODE] Nama Masjid (Area)"""
-        result = []
-        for preacher in self:
-            name = f"[{preacher.code or 'N/A'}] {preacher.name or 'N/A'}"
-            if preacher.area_id.name:
-                name += f" ({preacher.area_id.name})"
-            result.append((preacher.id, name))
-        return result
