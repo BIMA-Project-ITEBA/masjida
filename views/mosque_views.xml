@@ -65,17 +65,18 @@
                          <!-- <page string="Admins">
                             <field name="admin_ids" widget="many2many_tags"/>
                         </page> -->
-                        <page string="Board Members (Staf Admin)">
-                            <field name="board_member_ids">
-                                <list editable="bottom">
-                                    <field name="name"/>
-                                    <field name="position"/>
-                                    <field name="email" widget="email" required="1"/>
-                                    <field name="user_id" readonly="1" force_save="1"/>
-                                    <field name="phone"/>
-                                </list>
-                            </field>
-                        </page>
+                        <page string="Board Members">
+                        <field name="board_member_ids">
+                            <list editable="bottom">
+                                <!-- FIELD 'name', 'position', 'phone' diakses langsung dari mosque.board -->
+                                <field name="name"/> 
+                                <field name="position"/>
+                                <field name="phone"/>
+                                <!-- Perhatikan: user_id tidak wajib ditampilkan di sini, namun jika ditampilkan, ia adalah link ke res.users -->
+                                <field name="user_id"/> 
+                            </list>
+                        </field>
+                    </page>
                     </notebook>
                 </sheet>
             </form>
