@@ -11,6 +11,7 @@
         'security/user_groups.xml',
         'security/ir.model.access.csv',
         'security/ir_rule.xml',
+        'wizard/preacher_password_wizard_view.xml',
         # --- Load views ---
         'views/menu.xml', # Muat menu utama dulu
         'views/mosque_views.xml',
