@@ -1,31 +1,20 @@
+# -*- coding: utf-8 -*-
+
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
 
 class MosqueBoard(models.Model):
     """
-    Model ini mewarisi (inherit) dari res.users menggunakan Delegated Inheritance.
-    Setiap record MosqueBoard adalah record res.users, memungkinkan akses backend 
-    dan manajemen grup secara efisien.
+    Model ini menggunakan komposisi (Composition) murni:
+    MosqueBoard adalah model mandiri yang memiliki relasi Many2one ke res.users (user_id).
+    Semua logika pembuatan user ditangani secara manual di metode create.
     """
-    _inherits = {'res.users': 'user_id'} # Delegasi field ke user_id
-    
     _name = 'mosque.board'
     _description = 'Mosque Board Member (Staf Masjid/Admin)'
     
-    # user_id adalah field wajib yang menautkan ke parent model (res.users).
-    # Odoo akan membuat record res.users baru jika field ini tidak diisi saat 'create'.
-    user_id = fields.Many2one(
-        'res.users', 
-        string='User Account (Delegated)', 
-        required=True, 
-        ondelete='cascade', # Jika Board Member dihapus, akun user juga dihapus
-        auto_join=True,
-        index=True
-    )
+    # --- Field dikembalikan ke model ini ---
+    name = fields.Char(string='Name', required=True)
     
-    # Catatan: Field 'name', 'email', 'login' (dari res.users) sekarang diakses 
-    # secara langsung (e.g., self.name, self.email).
-
     position = fields.Selection([
         ('chairman', 'Chairman'),
         ('secretary', 'Secretary'),
@@ -33,78 +22,117 @@ class MosqueBoard(models.Model):
         ('member', 'Member'),
     ], string='Position', required=True, default='member')
     
-    # phone field tetap ada untuk data spesifik board member
     phone = fields.Char(string='Phone Number')
     
+    # Email field DIBUTUHKAN untuk logic create user.
+    # Namun, karena ini bukan Delegation, kita tidak perlu membuatnya 'required' 
+    # di sini agar tidak memicu duplikasi constraint login res.users. 
+    # Kita andalkan logika create untuk validasi.
+    email = fields.Char(string='Email (for login)') 
+
     # Relasi ke masjid yang diurus
     mosque_id = fields.Many2one('mosque.mosque', string='Mosque', required=True, ondelete='cascade')
+    
+    # Relasi ke akun user Odoo untuk login
+    user_id = fields.Many2one('res.users', string='User Account', ondelete='restrict', index=True,
+                              help="The user account linked to this board member. Automatically created/linked by Odoo.")
 
     _sql_constraints = [
         # Batasan SQL: satu akun pengguna hanya boleh memiliki satu posisi di MASJID tertentu.
-        # Ini memungkinkan pengguna yang sama menjadi Board Member di beberapa masjid.
         ('user_mosque_uniq', 'unique(user_id, mosque_id)', 'A user can only have one position at a given mosque!'),
+        # Tambahkan constraint untuk email, karena email tidak lagi otomatis dilindungi oleh unique(login) res.users di lapisan ini.
+        ('email_mosque_uniq', 'unique(email, mosque_id)', 'This email is already registered for this mosque!'),
     ]
+
+    @api.constrains('email')
+    def _check_email_format(self):
+        """Memastikan format email valid."""
+        for record in self:
+            if record.email and not fields.regex.match(r"[^@]+@[^@]+\.[^@]+", record.email):
+                raise ValidationError(_("Invalid email format."))
 
     @api.model_create_multi
     def create(self, vals_list):
         """
-        Override create untuk memastikan hak akses (grup) yang benar diberikan.
-        Delegated Inheritance secara otomatis membuat atau menautkan res.users.
+        Melakukan Komposisi Manual: Membuat atau menautkan record res.users,
+        lalu menautkannya kembali ke record mosque.board.
         """
-        # Mendapatkan referensi grup
         admin_group = self.env.ref('masjida.group_mosque_admin', raise_if_not_found=False)
-        user_group = self.env.ref('base.group_user', raise_if_not_found=False) # Grup Internal User
-        portal_group = self.env.ref('base.group_portal', raise_if_not_found=False) # Grup Portal/Mobile App
+        user_group = self.env.ref('base.group_user', raise_if_not_found=False) # Internal User
+        portal_group = self.env.ref('base.group_portal', raise_if_not_found=False) # Portal/Mobile App
 
         if not admin_group or not user_group or not portal_group:
             raise ValidationError(_("One or more required user groups (Admin, Internal, Portal) not found."))
-            
-        # 1. Tambahkan grup ke vals. Odoo akan menggunakannya saat membuat res.users baru.
-        for vals in vals_list:
-            if not vals.get('user_id'): # Hanya berlaku jika Odoo akan membuat user baru
-                vals.setdefault('groups_id', []).extend([
-                    (4, admin_group.id),
-                    (4, user_group.id), # Menjadikan Internal User (Akses Backend)
-                    (4, portal_group.id) # Memastikan akses Mobile App (jika diperlukan)
-                ])
-
-        # 2. Panggil super().create() - ini yang memicu Delegation Inheritance
-        board_members = super().create(vals_list)
         
-        # 3. Validasi dan penambahan grup secara terpisah jika user sudah ada sebelumnya
-        for member in board_members:
-            user = member.user_id.sudo()
-            
-            # Pastikan user yang ditautkan memiliki grup yang diperlukan
-            if not user.has_group('masjida.group_mosque_admin'):
-                user.write({'groups_id': [(4, admin_group.id)]})
-            
-            if not user.has_group('base.group_user'):
-                user.write({'groups_id': [(4, user_group.id)]})
+        # Proses setiap vals
+        for vals in vals_list:
+            if not vals.get('user_id') and vals.get('email'):
+                user_vals = {
+                    'name': vals.get('name'),
+                    'login': vals.get('email'),
+                    'email': vals.get('email'),
+                    # Catatan: Password TIDAK diatur di sini. Odoo akan meminta Admin Odoo untuk mengaturnya 
+                    # atau pengguna baru harus menggunakan fitur reset password.
+                }
 
-        return board_members
+                # Cari user yang sudah ada
+                user = self.env['res.users'].sudo().search([('login', '=', vals['email'])], limit=1)
+
+                if not user:
+                    # Buat user baru jika tidak ada
+                    user = self.env['res.users'].sudo().create(user_vals)
+
+                # Tambahkan grup yang diperlukan
+                groups_to_add = []
+                if not user.has_group('masjida.group_mosque_admin'):
+                    groups_to_add.append(admin_group.id)
+                if not user.has_group('base.group_user'):
+                    groups_to_add.append(user_group.id) # Internal User
+                if not user.has_group('base.group_portal'):
+                    groups_to_add.append(portal_group.id) # Portal User
+
+                if groups_to_add:
+                    user.write({'groups_id': [(4, gid) for gid in groups_to_add]})
+                    
+                vals['user_id'] = user.id
+            
+        # Panggil super().create() untuk membuat record mosque.board
+        return super().create(vals_list)
 
     def write(self, vals):
         """
-        Mempertahankan logika write yang ada (tetapi disederhanakan)
-        untuk memastikan hak akses tetap konsisten jika ada perubahan
-        pada record Board Member yang sudah ada.
+        Override write untuk memperbarui record res.users terkait jika 
+        nama atau email diubah.
         """
-        res = super().write(vals)
+        if any(f in vals for f in ['name', 'email']) and self.user_id:
+            for record in self:
+                user_vals = {}
+                if 'name' in vals and record.user_id.name != vals['name']:
+                    user_vals['name'] = vals['name']
+                if 'email' in vals and record.user_id.login != vals['email']:
+                    # Update login dan email res.users
+                    user_vals['login'] = vals['email']
+                    user_vals['email'] = vals['email']
+                
+                if user_vals:
+                    record.user_id.sudo().write(user_vals)
+                    
+        return super().write(vals)
+
+    def unlink(self):
+        """
+        Override unlink untuk menghapus record res.users terkait, 
+        jika tidak digunakan oleh record lain (misalnya preacher.preacher).
+        """
+        users_to_unlink = self.mapped('user_id')
+        res = super().unlink()
         
-        # Logika ini tidak lagi diperlukan karena penambahan grup dilakukan di create
-        # dan Delegation Inheritance seharusnya mengelola pembaruan field user
-        # namun, ini dapat digunakan sebagai pengamanan jika ada operasi write
-        # yang menargetkan user_id atau jika ada modifikasi massal.
-        if 'user_id' in vals:
-            admin_group = self.env.ref('masjida.group_mosque_admin', raise_if_not_found=False)
-            user_group = self.env.ref('base.group_user', raise_if_not_found=False)
-            
-            if admin_group and user_group:
-                for member in self.filtered(lambda m: m.user_id):
-                    user = member.user_id.sudo()
-                    if not user.has_group('masjida.group_mosque_admin'):
-                        user.write({'groups_id': [(4, admin_group.id)]})
-                    if not user.has_group('base.group_user'):
-                        user.write({'groups_id': [(4, user_group.id)]})
+        # Hanya hapus user jika tidak ada record mosque.board lain 
+        # (atau record preacher.preacher) yang menggunakannya.
+        for user in users_to_unlink:
+            # Cari apakah user ini masih ditautkan ke record MosqueBoard lain
+            if not self.env['mosque.board'].search_count([('user_id', '=', user.id)]):
+                # Opsional: Cek juga apakah user ini masih ditautkan ke record Preacher
+                if not self.env['preacher.preacher'].search_count([('user_id', '=', user.id)]):
+                    user.unlink()
         return res
