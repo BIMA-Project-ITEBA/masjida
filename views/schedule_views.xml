@@ -21,6 +21,14 @@
             <form string="Sermon Schedule">
                 <header>
                     <button name="action_send_invitation" string="Send Invitation" type="object" class="btn-primary" invisible="state != 'draft'"/>
+                    <button 
+                        name="action_open_whatsapp_invitation" 
+                        string="Send Invitation (WhatsApp)" 
+                        type="object" 
+                        class="oe_highlight" 
+                        icon="fa-whatsapp" 
+                        invisible="state != 'draft'"
+                    />
                     <button name="action_confirm" string="Confirm" type="object" class="btn-primary" invisible="state != 'sent'"/>
                     <button name="action_cancel" string="Cancel" type="object" invisible="state not in 'confirmed'"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,sent,confirmed,done"/>
