@@ -10,12 +10,12 @@
         sequence="10"/>
 
     <menuitem id="menu_sermon_schedules_main"
-        name="Schedules"
+        name="Schedules((Jadwal)"
         parent="menu_sermon_root"
         sequence="20"/>
 
     <menuitem id="menu_sermon_content_main"
-        name="Content"
+        name="Content(Konten)"
         parent="menu_sermon_root"
         sequence="30"/>
 </odoo>

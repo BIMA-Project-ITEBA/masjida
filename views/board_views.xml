@@ -37,7 +37,7 @@
     </record>
 
     <record id="action_mosque_board" model="ir.actions.act_window">
-        <field name="name">Board Members</field>
+        <field name="name">Board Members(Aggota Masjid)</field>
         <field name="res_model">mosque.board</field>
         <field name="view_mode">list,form</field>
     </record>

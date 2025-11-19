@@ -84,7 +84,7 @@
     </record>
 
     <record id="action_mosque_mosque" model="ir.actions.act_window">
-        <field name="name">Mosques</field>
+        <field name="name">Mosques(Masjid)</field>
         <field name="res_model">mosque.mosque</field>
         <field name="view_mode">list,form</field>
     </record>
