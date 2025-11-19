@@ -19,6 +19,8 @@
                     <group>
                         <field name="name"/>
                         <field name="parent_id"/>
+                        <field name="latitude"/>
+                        <field name="longitude"/>
                     </group>
                 </sheet>
             </form>

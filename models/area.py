@@ -12,3 +12,6 @@ class Area(models.Model):
     _sql_constraints = [
         ('name_uniq', 'unique(name)', 'Area name must be unique!')
     ]
+
+    latitude = fields.Float(string='Latitude', digits=(10, 7))
+    longitude = fields.Float(string='Longitude', digits=(10, 7))
