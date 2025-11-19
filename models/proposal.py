@@ -29,26 +29,28 @@ class SermonProposal(models.Model):
     def action_approve(self):
         """Function for the mosque admin to approve and create a new schedule."""
         self.ensure_one()
-        # Validation: Ensure the user is an admin of the related mosque
-        # if self.env.user not in self.mosque_id.admin_ids:
-        #     raise models.UserError('Only this mosque\'s admin can approve the proposal.')
+        
+        # Validasi: Pastikan user adalah Board Member dari masjid terkait
         is_board_member = self.env['mosque.board'].search_count([('mosque_id', '=', self.mosque_id.id),('user_id', '=', self.env.uid)])
         if not is_board_member:
-            raise models.UserError('Only a board member of this mosque can approve the proposal.')
-        # Sisa kode di bawahnya biarkan sama
-        self.env['sermon.schedule'].create({
-            # ...
-        })
-        self.state = 'approved'
-            
-        # Create a new record in sermon.schedule
-        self.env['sermon.schedule'].create({
-            'mosque_id': self.mosque_id.id,
-            'preacher_id': self.preacher_id.id,
-            'topic': self.proposed_topic,
-            'start_time': self.proposed_start_time,
-            'state': 'confirmed' # The status is immediately set to confirmed
-        })
+            raise UserError('Only a board member of this mosque can approve the proposal.')
+        
+        # --- PERBAIKAN PENTING DI SINI ---
+        # 1. Pastikan field mandatory Schedule terisi dari Proposal
+        schedule_vals = {
+            'mosque_id': self.mosque_id.id,            # DARI Proposal: mosque_id
+            'preacher_id': self.preacher_id.id,        # DARI Proposal: preacher_id
+            'topic': self.proposed_topic,              # DARI Proposal: proposed_topic
+            'start_time': self.proposed_start_time,    # DARI Proposal: proposed_start_time
+            # Field optional lainnya dapat ditambahkan di sini
+            'state': 'draft' # Disarankan: Mulai dari 'draft', lalu Admin bisa Send Invitation
+            # Jika Anda ingin langsung confirmed, gunakan 'confirmed', tapi 'draft' lebih baik
+        }
+        
+        # 2. Buat record di sermon.schedule
+        self.env['sermon.schedule'].create(schedule_vals)
+        
+        # 3. Ubah status proposal
         self.state = 'approved'
 
     def action_reject(self):
