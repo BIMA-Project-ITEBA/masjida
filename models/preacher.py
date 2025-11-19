@@ -48,15 +48,30 @@ class Preacher(models.Model):
 
     @api.model
     def create(self, vals):
-        """Automatically creates a portal user if one does not exist when a preacher profile is created."""
+        """
+        [DIUBAH]: Menggunakan logika Komposisi yang disederhanakan dan 
+        memastikan user_id tidak bersifat unik.
+        """
+        
+        user = None
+        if vals.get('email'):
+            # 1. Cari user yang sudah ada (tidak perlu cek user_id di vals karena ini Composition)
+            user = self.env['res.users'].sudo().search([('login', '=', vals['email'])], limit=1)
+            
+            # 2. Jika user tidak ada, buat user Portal baru.
+            if not user:
+                portal_group_id = self.env.ref('base.group_portal').id
+                user_vals = {
+                    'name': vals.get('name'),
+                    'login': vals.get('email'),
+                    'email': vals.get('email'),
+                    'groups_id': [(6, 0, [portal_group_id])] # Hanya grup Portal
+                }
+                user = self.env['res.users'].sudo().create(user_vals)
+                
+            # 3. Tautkan user ke record ini
+            vals['user_id'] = user.id
+
+        # 4. Buat record preacher
         preacher = super(Preacher, self).create(vals)
-        if not preacher.user_id and preacher.email:
-            # Create a new user and add them to the portal group
-            user = self.env['res.users'].sudo().create({
-                'name': preacher.name,
-                'login': preacher.email,
-                'email': preacher.email,
-                'groups_id': [(6, 0, [self.env.ref('base.group_portal').id])]
-            })
-            preacher.user_id = user.id
         return preacher
