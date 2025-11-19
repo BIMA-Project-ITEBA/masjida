@@ -62,7 +62,7 @@
     </record>
     
     <record id="action_preacher_preacher" model="ir.actions.act_window">
-        <field name="name">Preachers(Pendakwah)</field>
+        <field name="name">Preachers (Pendakwah)</field>
         <field name="res_model">preacher.preacher</field>
         <field name="view_mode">list,form</field>
     </record>
