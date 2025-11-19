@@ -7,7 +7,6 @@ class MosqueBoard(models.Model):
     Setiap record MosqueBoard adalah record res.users, memungkinkan akses backend 
     dan manajemen grup secara efisien.
     """
-    _inherit = 'res.users'  # Mewarisi semua properti dan metode res.users
     _inherits = {'res.users': 'user_id'} # Delegasi field ke user_id
     
     _name = 'mosque.board'
