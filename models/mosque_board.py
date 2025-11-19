@@ -7,6 +7,8 @@ class MosqueBoard(models.Model):
     _name = 'mosque.board'
     _description = 'Mosque Board Member'
 
+
+
     name = fields.Char(string='Name', required=True)
     position = fields.Selection([
         ('chairman', 'Chairman'),
@@ -36,11 +38,8 @@ class MosqueBoard(models.Model):
     def create(self, vals):
         """
         Override create method.
-        1. Check if user_id is provided.
-        2. If not, check if a user exists with the provided email.
-        3. If not, create a new user.
-        4. Add the user to the 'Mosque Admin' group.
-        5. Link the user to the board member.
+        Menciptakan atau menautkan akun res.users, memastikan pengguna baru
+        secara otomatis menjadi Internal User dan Admin Masjid.
         """
         admin_group = self.env.ref('masjida.group_mosque_admin', raise_if_not_found=False)
         if not admin_group:
@@ -50,26 +49,35 @@ class MosqueBoard(models.Model):
         if vals.get('user_id'):
             user = self.env['res.users'].browse(vals['user_id'])
         elif vals.get('email'):
-            # Cari user berdasarkan email/login
+            # 1. Cari user berdasarkan email/login
             user = self.env['res.users'].sudo().search([('login', '=', vals['email'])], limit=1)
+            
+            # 2. Jika tidak ada, buat user baru
             if not user:
-                # Jika tidak ada, buat user baru
+                # Tentukan grup dasar: Internal User dan Portal
+                # Internal User (base.group_user) yang membuat akun dapat login ke backend Odoo.
+                internal_user_group_id = self.env.ref('base.group_user').id
+                portal_group_id = self.env.ref('base.group_portal').id
+                
+                # Cek apakah user sudah ada di preacher.py, jika iya, user sudah termasuk base.group_portal
+                
                 user = self.env['res.users'].sudo().create({
                     'name': vals.get('name'),
                     'login': vals.get('email'),
                     'email': vals.get('email'),
-                    # Tambahkan ke grup Portal dan Internal User (grup dasar untuk login backend)
                     'groups_id': [(6, 0, [
-                        self.env.ref('base.group_portal').id,
-                        self.env.ref('base.group_user').id
+                        internal_user_group_id, # <-- PERUBAHAN UTAMA: Menambahkan Internal User
+                        portal_group_id, 
                     ])]
                 })
+            
+            # 3. Tautkan user ke record yang sedang dibuat
             vals['user_id'] = user.id
 
-        # Buat record board_member
+        # 4. Buat record board_member
         board_member = super(MosqueBoard, self).create(vals)
 
-        # Tambahkan user ke grup Mosque Admin jika belum ada
+        # 5. Tambahkan user ke grup Mosque Admin jika belum ada
         if user and not user.has_group('masjida.group_mosque_admin'):
             user.sudo().write({'groups_id': [(4, admin_group.id)]})
             
