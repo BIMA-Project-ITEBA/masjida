@@ -50,7 +50,7 @@
     </record>
 
     <record id="action_sermon_schedule" model="ir.actions.act_window">
-        <field name="name">Sermon Schedules</field>
+        <field name="name">Sermon Schedules(Jadwal Dakwah)</field>
         <field name="res_model">sermon.schedule</field>
         <field name="view_mode">list,form</field>
     </record>
@@ -98,7 +98,7 @@
     </record>
 
     <record id="action_sermon_proposal" model="ir.actions.act_window">
-        <field name="name">Sermon Proposals</field>
+        <field name="name">Sermon Proposals(Pengajuan dakwah)</field>
         <field name="res_model">sermon.proposal</field>
         <field name="view_mode">list,form</field>
     </record>
