@@ -5,7 +5,6 @@ from odoo import models, fields, api
 class Preacher(models.Model):
     _name = 'preacher.preacher'
     _description = 'Preacher Master Data Model'
-    _rec_name = 'code',''
     
     code = fields.Char(string='code')
     name = fields.Char(string='Preacher Name', required=True)
