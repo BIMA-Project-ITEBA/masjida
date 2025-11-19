@@ -2,6 +2,7 @@
 
 from odoo import models, fields, api, _
 from odoo.exceptions import ValidationError
+from odoo.tools import email_re
 
 class MosqueBoard(models.Model):
     """
@@ -46,9 +47,8 @@ class MosqueBoard(models.Model):
 
     @api.constrains('email')
     def _check_email_format(self):
-        """Memastikan format email valid."""
         for record in self:
-            if record.email and not fields.regex.match(r"[^@]+@[^@]+\.[^@]+", record.email):
+            if record.email and not email_re.match(record.email):
                 raise ValidationError(_("Invalid email format."))
 
     @api.model_create_multi
