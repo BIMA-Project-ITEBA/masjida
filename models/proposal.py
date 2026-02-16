@@ -5,12 +5,20 @@ from odoo import models, fields, api
 class SermonProposal(models.Model):
     _name = 'sermon.proposal'
     _description = 'Sermon Schedule Proposal from Preacher to Mosque'
+    
 
     preacher_id = fields.Many2one('preacher.preacher', string='Preacher', required=True,
                                  default=lambda self: self.env['preacher.preacher'].search([('user_id', '=', self.env.uid)], limit=1))
     mosque_id = fields.Many2one('mosque.mosque', string='Target Mosque', required=True, domain="[('board_member_ids', '!=', False)]")
     
     proposed_topic = fields.Char(string='Proposed Topic', required=True)
+
+    # Field baru untuk deskripsi lengkap
+    full_description = fields.Text(string='Deskripsi Lengkap Pengajuan')
+    
+    # Field untuk upload file (Materi/Surat)
+    attachment_file = fields.Binary(string='Materi/Surat Pengajuan')
+    attachment_filename = fields.Char(string='Nama File') # Menyimpan nama file asli
     proposed_start_time = fields.Datetime(string='Proposed Time', required=True)
     notes = fields.Text(string='Notes for Mosque Admin')
     

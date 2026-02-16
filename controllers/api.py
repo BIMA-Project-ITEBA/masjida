@@ -529,6 +529,9 @@ class SermonAPIController(http.Controller):
                 'proposed_topic': data.get('proposed_topic'),
                 'proposed_start_time': data.get('proposed_start_time'),
                 'notes': data.get('notes'),
+                'full_description': data.get('full_description'), # Field baru
+                'attachment_file': data.get('attachment_file'),   # Base64 string dari Flutter
+                'attachment_filename': data.get('attachment_filename'), # Nama file asli
             })
             
             # Langsung ubah statusnya menjadi 'submitted'
