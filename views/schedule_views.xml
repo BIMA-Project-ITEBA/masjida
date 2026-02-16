@@ -92,6 +92,9 @@
                         <field name="proposed_start_time"/>
                     </group>
                     <field name="notes" placeholder="Notes for the mosque admin..."/>
+                    <field name="full_description"/>
+                    <field name="attachment_file" filename="file_name"/>
+                    <field name="attachment_filename" invisible="1"/>
                 </sheet>
             </form>
         </field>
