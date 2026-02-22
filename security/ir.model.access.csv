@@ -35,11 +35,11 @@ access_preacher_specialization_public,access.preacher.specialization.public,mode
 access_preacher_specialization_system,access.preacher.specialization.system,model_preacher_specialization,base.group_system,1,1,1,1
 
 access_masjida_help_type_admin,masjida.help.type.admin,model_masjida_help_type,base.group_system,1,1,1,1
-access_masjida_help_type_staff,masjida.help.type.staff,model_masjida_help_type,group_masjida_mosque_staff,1,1,1,0
-access_masjida_help_type_preacher,masjida.help.type.preacher,model_masjida_help_type,group_masjida_preacher,1,0,0,0
-access_masjida_help_type_user,masjida.help.type.user,model_masjida_help_type,base.group_user,1,0,0,0
+access_masjida_help_type_staff,masjida.help.type.staff,model_masjida_help_type,gmasjida.group_mosque_admin,1,1,1,0
+access_masjida_help_type_preacher,masjida.help.type.preacher,model_masjida_help_type,base.group_portal,1,0,0,0
+access_masjida_help_type_user,masjida.help.type.user,model_masjida_help_type,base.group_public,1,0,0,0
 
 access_masjida_help_request_admin,masjida.help.request.admin,model_masjida_help_request,base.group_system,1,1,1,1
-access_masjida_help_request_staff,masjida.help.request.staff,model_masjida_help_request,group_masjida_mosque_staff,1,1,1,1
-access_masjida_help_request_preacher,masjida.help.request.preacher,model_masjida_help_request,group_masjida_preacher,1,1,1,0
-access_masjida_help_request_user,masjida.help.request.user,model_masjida_help_request,base.group_user,1,1,1,0
+access_masjida_help_request_staff,masjida.help.request.staff,model_masjida_help_request,masjida.group_mosque_admin,1,1,1,1
+access_masjida_help_request_preacher,masjida.help.request.preacher,model_masjida_help_request,base.group_portal,1,1,1,0
+access_masjida_help_request_user,masjida.help.request.user,model_masjida_help_request,base.group_public,1,1,1,0
