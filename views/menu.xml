@@ -81,6 +81,7 @@
                 Belum ada permintaan bantuan.
             </p>
         </p>
+        </field>
     </record>
 
     <!-- MENUS -->
@@ -102,7 +103,7 @@
               action="action_masjida_help_type"
               sequence="20"
               groups="base.group_system"/>
-              
+
     <menuitem id="menu_sermon_root"
         name="Sermon Management"
         sequence="10"/>
