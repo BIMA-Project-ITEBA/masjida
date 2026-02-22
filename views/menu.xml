@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 
+    <!-- VIEWS: List untuk Permintaan Bantuan -->
     <record id="masjida_help_request_list" model="ir.ui.view">
         <field name="name">masjida.help.request.list</field>
         <field name="model">masjida.help.request</field>
         <field name="arch" type="xml">
-            <list string="Areas">
+            <list string="Permintaan Bantuan">
                 <field name="user_id"/>
                 <field name="help_type_id"/>
-                <field name="state"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'open'" decoration-success="state == 'done'"/>
             </list>
         </field>
     </record>
@@ -38,6 +39,15 @@
     </record>
 
     <!-- MENUS -->
+    
+    <!-- Definisi Menu Utama Masjida (Root) -->
+    <!-- Menu ini harus ada agar menu-menu di bawahnya bisa merujuk ke parent ini -->
+    <menuitem id="menu_masjida_root"
+              name="Masjida"
+              web_icon="masjida,static/description/icon.png"
+              sequence="1"/>
+
+    <!-- Menu Parent Bantuan -->
     <menuitem id="menu_masjida_help_root"
               name="Bantuan"
               parent="menu_masjida_root" 
@@ -56,22 +66,24 @@
               sequence="20"
               groups="base.group_system"/>
 
+    <!-- Menu Lainnya -->
     <menuitem id="menu_sermon_root"
-        name="Sermon Management"
-        sequence="10"/>
+              name="Sermon Management"
+              parent="menu_masjida_root"
+              sequence="10"/>
 
     <menuitem id="menu_sermon_master_data"
-        name="Master Data"
-        parent="menu_sermon_root"
-        sequence="10"/>
+              name="Master Data"
+              parent="menu_sermon_root"
+              sequence="10"/>
 
     <menuitem id="menu_sermon_schedules_main"
-        name="Schedules (Jadwal)"
-        parent="menu_sermon_root"
-        sequence="20"/>
+              name="Schedules (Jadwal)"
+              parent="menu_sermon_root"
+              sequence="20"/>
 
     <menuitem id="menu_sermon_content_main"
-        name="Content (Konten)"
-        parent="menu_sermon_root"
-        sequence="30"/>
+              name="Content (Konten)"
+              parent="menu_sermon_root"
+              sequence="30"/>
 </odoo>
