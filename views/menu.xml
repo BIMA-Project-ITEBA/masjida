@@ -1,5 +1,108 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+<!-- VIEWS: Jenis Bantuan (Configuration) -->
+    <record id="view_masjida_help_type_tree" model="ir.ui.view">
+        <field name="name">masjida.help.type.tree</field>
+        <field name="model">masjida.help.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_masjida_help_type" model="ir.actions.act_window">
+        <field name="name">Jenis Bantuan</field>
+        <field name="res_model">masjida.help.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tambahkan jenis bantuan baru.
+            </p>
+            <p>
+                Opsi ini akan muncul di aplikasi mobile sebagai pilihan kategori bantuan.
+            </p>
+        </field>
+    </record>
+
+    <!-- VIEWS: Permintaan Bantuan -->
+    <record id="view_masjida_help_request_tree" model="ir.ui.view">
+        <field name="name">masjida.help.request.tree</field>
+        <field name="model">masjida.help.request</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'draft'" decoration-warning="state == 'open'" decoration-success="state == 'done'">
+                <field name="create_date" string="Tanggal"/>
+                <field name="user_id"/>
+                <field name="help_type_id"/>
+                <field name="description" optional="show"/>
+                <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-warning="state == 'open'" decoration-success="state == 'done'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_masjida_help_request_form" model="ir.ui.view">
+        <field name="name">masjida.help.request.form</field>
+        <field name="model">masjida.help.request</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_open" string="Proses" type="object" invisible="state != 'draft'" class="btn-primary"/>
+                    <button name="action_done" string="Selesai" type="object" invisible="state != 'open'" class="btn-success"/>
+                    <button name="action_cancel" string="Batalkan" type="object" invisible="state in ('done', 'cancel')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="user_id" readonly="1"/>
+                            <field name="help_type_id" readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="create_date" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Deskripsi Bantuan" name="description">
+                            <field name="description" placeholder="Penjelasan dari pengguna..." readonly="state != 'draft'"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_masjida_help_request" model="ir.actions.act_window">
+        <field name="name">Permintaan Bantuan</field>
+        <field name="res_model">masjida.help.request</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Belum ada permintaan bantuan.
+            </p>
+        </p>
+    </record>
+
+    <!-- MENUS -->
+    <!-- Menu Utama Bantuan -->
+    <menuitem id="menu_masjida_help_root"
+              name="Bantuan"
+              parent="menu_masjida_root" 
+              sequence="50"/>
+
+    <menuitem id="menu_masjida_help_request"
+              name="Daftar Permintaan"
+              parent="menu_masjida_help_root"
+              action="action_masjida_help_request"
+              sequence="10"/>
+
+    <menuitem id="menu_masjida_help_type"
+              name="Konfigurasi Jenis Bantuan"
+              parent="menu_masjida_help_root"
+              action="action_masjida_help_type"
+              sequence="20"
+              groups="base.group_system"/>
+              
     <menuitem id="menu_sermon_root"
         name="Sermon Management"
         sequence="10"/>

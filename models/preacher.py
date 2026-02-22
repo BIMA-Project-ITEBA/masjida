@@ -88,3 +88,25 @@ class Preacher(models.Model):
         # 4. Buat record preacher
         preacher = super(Preacher, self).create(vals)
         return preacher
+
+class MasjidaHelpType(models.Model):
+    _name = 'masjida.help.type'
+    _description = 'Jenis Bantuan Masjida'
+
+    name = fields.Char(string='Nama Bantuan', required=True)
+    active = fields.Boolean(default=True)
+
+class MasjidaHelpRequest(models.Model):
+    _name = 'masjida.help.request'
+    _description = 'Permintaan Bantuan Pengguna'
+    _order = 'create_date desc'
+
+    user_id = fields.Many2one('res.users', string='Pengguna', default=lambda self: self.env.user)
+    help_type_id = fields.Many2one('masjida.help.type', string='Jenis Bantuan', required=True)
+    description = fields.Text(string='Penjelasan Bantuan', required=True)
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('open', 'Sedang Diproses'),
+        ('done', 'Selesai'),
+        ('cancel', 'Dibatalkan')
+    ], string='Status', default='draft')

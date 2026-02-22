@@ -543,3 +543,29 @@ class SermonAPIController(http.Controller):
         except Exception as e:
             _logger.error(f"Gagal membuat proposal: {e}", exc_info=True)
             return {'status': 'error', 'message': str(e)}
+
+    @http.route('/api/help/types', type='json', auth='public', methods=['POST'], csrf=False)
+    def get_help_types(self, **kwargs):
+        """Mengambil daftar jenis bantuan yang dikonfigurasi di Odoo"""
+        types = request.env['masjida.help.type'].sudo().search([('active', '=', True)])
+        return {
+            'status': 200,
+            'data': [{'id': t.id, 'name': t.name} for t in types]
+        }
+
+    @http.route('/api/help/submit', type='json', auth='user', methods=['POST'], csrf=False)
+    def submit_help_request(self, **kwargs):
+        """Menyimpan permintaan bantuan dari aplikasi Flutter"""
+        user = request.env.user
+        help_type_id = kwargs.get('help_type_id')
+        description = kwargs.get('description')
+
+        if not help_type_id or not description:
+            return {'status': 400, 'message': 'Missing required fields'}
+
+        request.env['masjida.help.request'].sudo().create({
+            'user_id': user.id,
+            'help_type_id': int(help_type_id),
+            'description': description,
+        })
+        return {'status': 200, 'message': 'Permintaan bantuan berhasil dikirim'}
