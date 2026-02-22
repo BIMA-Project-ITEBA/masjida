@@ -35,7 +35,7 @@ access_preacher_specialization_public,access.preacher.specialization.public,mode
 access_preacher_specialization_system,access.preacher.specialization.system,model_preacher_specialization,base.group_system,1,1,1,1
 
 access_masjida_help_type_admin,masjida.help.type.admin,model_masjida_help_type,base.group_system,1,1,1,1
-access_masjida_help_type_staff,masjida.help.type.staff,model_masjida_help_type,gmasjida.group_mosque_admin,1,1,1,0
+access_masjida_help_type_staff,masjida.help.type.staff,model_masjida_help_type,masjida.group_mosque_admin,1,1,1,0
 access_masjida_help_type_preacher,masjida.help.type.preacher,model_masjida_help_type,base.group_portal,1,0,0,0
 access_masjida_help_type_user,masjida.help.type.user,model_masjida_help_type,base.group_public,1,0,0,0
 
